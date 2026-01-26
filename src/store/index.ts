@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Timetable, Notice, Book, Word, MoneyTransaction, CleaningTask, Meal } from '../types';
+import { Timetable, Notice, Book, Word, MoneyTransaction, CleaningTask, Meal, SavingsGoal } from '../types';
 
 interface AppState {
     // 시간표

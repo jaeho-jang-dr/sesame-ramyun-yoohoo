@@ -1,126 +1,149 @@
+"use client";
+
 import Link from "next/link";
-import { BookOpen, CheckCircle, DollarSign, Utensils, Star, Calendar, Edit3, Trash2 } from "lucide-react";
+import { BookOpen, CheckCircle, DollarSign, Star, LayoutGrid, Users, ChevronRight, Calendar, Bell, Utensils, Pencil, Brain, Book, Wallet, Brush } from "lucide-react";
+import { useAuthStore, logout } from "@/lib/auth";
 
 export default function Home() {
+  const { user, isAdmin } = useAuthStore();
+
+  const menuItems = [
+    { href: "/school", icon: Calendar, label: "시간표", colorClass: "bg-blue-50 text-blue-600", desc: "이번 주 수업" },
+    { href: "/notices", icon: Bell, label: "알림장", colorClass: "bg-green-50 text-green-600", desc: "학교 소식" },
+    { href: "/meals", icon: Utensils, label: "급식 메뉴", colorClass: "bg-orange-50 text-orange-600", desc: "오늘 뭐 먹지?" },
+    { href: "/dictation", icon: Pencil, label: "받아쓰기", colorClass: "bg-yellow-50 text-yellow-600", desc: "맞춤법 연습" },
+    { href: "/gugudan", icon: Brain, label: "구구단", colorClass: "bg-red-50 text-red-600", desc: "수학 두뇌" },
+    { href: "/books", icon: Book, label: "독서 기록", colorClass: "bg-pink-50 text-pink-600", desc: "마음의 양식" },
+    { href: "/money", icon: Wallet, label: "용돈 기입장", colorClass: "bg-indigo-50 text-indigo-600", desc: "똑똑한 소비" },
+    { href: "/cleaning", icon: Brush, label: "청소/심부름", colorClass: "bg-teal-50 text-teal-600", desc: "나의 역할" },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-300 via-pink-300 to-purple-300 font-sans">
+    <div className="min-h-screen bg-[#FDFBF7] font-sans selection:bg-purple-100 text-gray-800">
+      {/* Background decoration */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 10% 20%, rgba(253, 224, 71, 0.2) 0%, transparent 20%), radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.2) 0%, transparent 20%)'
+        }}>
+      </div>
+
       {/* Header */}
-      <header className="bg-white/90 backdrop-blur-sm shadow-lg p-6 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto flex flex-col items-center">
-          <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-pink-500 mb-2 drop-shadow-sm">
-            🌟 참깨라면 유후~ 🌟
-          </h1>
-          <p className="text-gray-600 font-medium text-lg">
-            혜완이의 신나는 학교생활 도우미
-          </p>
+      <header className="relative z-10 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🏫</span>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900">
+              참깨라면 유후 <span className="text-purple-600 text-sm font-medium ml-1">High</span>
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {user ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-gray-600 hidden sm:block">
+                  {user.displayName}님
+                </span>
+                {isAdmin && (
+                  <Link href="/admin" className="p-1.5 bg-purple-100 rounded-lg hover:bg-purple-200 transition-colors">
+                    <span className="text-xs font-bold text-purple-700">ADMIN</span>
+                  </Link>
+                )}
+                <button onClick={logout} className="text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <Link href="/login" className="bg-gray-900 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
+                로그인
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto p-6 space-y-8">
-        {/* Dashboard Summary Cards */}
-        <section className="bg-white rounded-3xl p-6 shadow-xl border-4 border-white/50">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <span className="text-3xl">👋</span> 안녕, 혜완아!
+      <main className="relative z-10 max-w-5xl mx-auto p-6 space-y-8">
+
+        {/* Dashboard Summary - Compact & Clean */}
+        <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200/60">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              📊 나의 활동 요약
             </h2>
-            <span className="text-sm bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold">
-              오늘도 화이팅!
-            </span>
+            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-md font-medium">Today</span>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-2xl border-2 border-blue-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-2">
-                <BookOpen className="w-5 h-5 text-blue-500" />
-                <span className="font-bold text-gray-600">읽은 책</span>
+            {[
+              { label: '읽은 책', value: '12권', icon: BookOpen, colorClass: 'text-blue-600 bg-blue-50' },
+              { label: '남은 할 일', value: '3개', icon: CheckCircle, colorClass: 'text-green-600 bg-green-50' },
+              { label: '모은 용돈', value: '5,000원', icon: DollarSign, colorClass: 'text-yellow-600 bg-yellow-50' },
+              { label: '받은 칭찬', value: '8개', icon: Star, colorClass: 'text-pink-600 bg-pink-50' }
+            ].map((stat, i) => (
+              <div key={i} className={`${stat.colorClass} bg-opacity-50 p-4 rounded-xl border border-transparent hover:border-black/5 transition-colors flex flex-col items-center justify-center text-center gap-1`}>
+                <stat.icon className="w-5 h-5 mb-1" />
+                <span className="text-xs text-gray-600 font-medium">{stat.label}</span>
+                <p className="text-lg font-bold">{stat.value}</p>
               </div>
-              <p className="text-3xl font-black text-blue-600">12<span className="text-base font-medium text-gray-500 ml-1">권</span></p>
-            </div>
-
-            <div className="bg-green-50 p-4 rounded-2xl border-2 border-green-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span className="font-bold text-gray-600">할 일</span>
-              </div>
-              <p className="text-3xl font-black text-green-600">3<span className="text-base font-medium text-gray-500 ml-1">개 남음</span></p>
-            </div>
-
-            <div className="bg-yellow-50 p-4 rounded-2xl border-2 border-yellow-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-5 h-5 text-yellow-500" />
-                <span className="font-bold text-gray-600">용돈</span>
-              </div>
-              <p className="text-3xl font-black text-yellow-600">5,000<span className="text-base font-medium text-gray-500 ml-1">원</span></p>
-            </div>
-
-            <div className="bg-pink-50 p-4 rounded-2xl border-2 border-pink-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-2">
-                <Star className="w-5 h-5 text-pink-500" />
-                <span className="font-bold text-gray-600">칭찬</span>
-              </div>
-              <p className="text-3xl font-black text-pink-600">8<span className="text-base font-medium text-gray-500 ml-1">개</span></p>
-            </div>
+            ))}
           </div>
         </section>
 
-        {/* Navigation Grid (Menu) */}
-        <nav className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Link href="/school" className="group bg-white p-6 rounded-3xl shadow-lg border-b-4 border-blue-200 hover:border-blue-400 hover:-translate-y-1 transition-all flex flex-col items-center gap-3">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-              <span className="text-3xl">📅</span>
+        {/* Quick Links: App Board & Guestbook (Smaller, Side-by-Side) */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link href="/apps" className="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between hover:shadow-md transition-all hover:border-purple-200">
+            <div className="flex items-center gap-4">
+              <div className="bg-purple-100 p-2.5 rounded-lg group-hover:bg-purple-200 transition-colors">
+                <LayoutGrid className="w-5 h-5 text-purple-700" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-bold text-gray-800 text-sm">앱 스튜디오</h3>
+                <p className="text-xs text-gray-500">내가 만든 앱 (3개)</p>
+              </div>
             </div>
-            <span className="text-xl font-bold text-gray-700">시간표</span>
+            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-purple-500 transition-colors" />
           </Link>
 
-          <Link href="/notices" className="group bg-white p-6 rounded-3xl shadow-lg border-b-4 border-green-200 hover:border-green-400 hover:-translate-y-1 transition-all flex flex-col items-center gap-3">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors">
-              <span className="text-3xl">📝</span>
+          <Link href="/guestbook" className="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between hover:shadow-md transition-all hover:border-green-200">
+            <div className="flex items-center gap-4">
+              <div className="bg-green-100 p-2.5 rounded-lg group-hover:bg-green-200 transition-colors">
+                <Users className="w-5 h-5 text-green-700" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-bold text-gray-800 text-sm">커뮤니티</h3>
+                <p className="text-xs text-gray-500">친구들 방명록</p>
+              </div>
             </div>
-            <span className="text-xl font-bold text-gray-700">알림장</span>
+            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-green-500 transition-colors" />
           </Link>
+        </section>
 
-          <Link href="/meals" className="group bg-white p-6 rounded-3xl shadow-lg border-b-4 border-orange-200 hover:border-orange-400 hover:-translate-y-1 transition-all flex flex-col items-center gap-3">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-              <span className="text-3xl">🍱</span>
-            </div>
-            <span className="text-xl font-bold text-gray-700">급식 메뉴</span>
-          </Link>
+        {/* Main Menu Grid - Professional & Clean */}
+        <div>
+          <h3 className="text-lg font-bold text-gray-800 mb-4 px-1">바로가기</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {menuItems.map((item, index) => (
+              <Link href={item.href} key={index} className="group relative">
+                <div className={`
+                  bg-white p-5 rounded-xl border border-gray-200 shadow-sm
+                  hover:shadow-md hover:-translate-y-0.5 transition-all duration-200
+                  flex flex-col items-center text-center h-full
+                `}>
+                  <div className={`
+                    w-12 h-12 rounded-2xl flex items-center justify-center mb-3
+                    ${item.colorClass} group-hover:scale-110 transition-transform duration-200
+                  `}>
+                    <item.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-gray-800 mb-1">{item.label}</h3>
+                  <p className="text-xs text-gray-400 group-hover:text-gray-500 transition-colors line-clamp-1">
+                    {item.desc}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
 
-          <Link href="/dictation" className="group bg-white p-6 rounded-3xl shadow-lg border-b-4 border-yellow-200 hover:border-yellow-400 hover:-translate-y-1 transition-all flex flex-col items-center gap-3">
-            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
-              <span className="text-3xl">✍️</span>
-            </div>
-            <span className="text-xl font-bold text-gray-700">받아쓰기</span>
-          </Link>
-
-          <Link href="/gugudan" className="group bg-white p-6 rounded-3xl shadow-lg border-b-4 border-red-200 hover:border-red-400 hover:-translate-y-1 transition-all flex flex-col items-center gap-3">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center group-hover:bg-red-200 transition-colors">
-              <span className="text-3xl">🔢</span>
-            </div>
-            <span className="text-xl font-bold text-gray-700">구구단</span>
-          </Link>
-
-          <Link href="/books" className="group bg-white p-6 rounded-3xl shadow-lg border-b-4 border-pink-200 hover:border-pink-400 hover:-translate-y-1 transition-all flex flex-col items-center gap-3">
-            <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center group-hover:bg-pink-200 transition-colors">
-              <span className="text-3xl">📚</span>
-            </div>
-            <span className="text-xl font-bold text-gray-700">독서 기록</span>
-          </Link>
-
-          <Link href="/money" className="group bg-white p-6 rounded-3xl shadow-lg border-b-4 border-indigo-200 hover:border-indigo-400 hover:-translate-y-1 transition-all flex flex-col items-center gap-3">
-            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-              <span className="text-3xl">💰</span>
-            </div>
-            <span className="text-xl font-bold text-gray-700">용돈</span>
-          </Link>
-
-          <Link href="/cleaning" className="group bg-white p-6 rounded-3xl shadow-lg border-b-4 border-teal-200 hover:border-teal-400 hover:-translate-y-1 transition-all flex flex-col items-center gap-3">
-            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center group-hover:bg-teal-200 transition-colors">
-              <span className="text-3xl">🧹</span>
-            </div>
-            <span className="text-xl font-bold text-gray-700">청소/심부름</span>
-          </Link>
-        </nav>
       </main>
     </div>
   );

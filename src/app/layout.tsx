@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
-import { Jua } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth";
 
-const jua = Jua({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-jua",
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sesame Ramyun",
-  description: "A fun app for kids",
+  title: "참깨라면 유후~",
+  description: "혜완이의 즐거운 학교생활 도우미",
 };
 
 export default function RootLayout({
@@ -19,11 +16,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${jua.className} antialiased`}
-      >
-        {children}
+    <html lang="ko">
+      <body className={inter.className}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
