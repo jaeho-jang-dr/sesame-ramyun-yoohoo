@@ -44,9 +44,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const loginWithGoogle = async () => {
     try {
         await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Login failed", error);
-        alert("로그인에 실패했습니다.");
+        alert(`로그인 실패: ${error.message || "알 수 없는 오류"}`);
     }
 };
 
