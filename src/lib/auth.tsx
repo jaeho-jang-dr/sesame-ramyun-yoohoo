@@ -46,16 +46,31 @@ export const loginWithGoogle = async () => {
         await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
         console.error("Login failed", error);
-        alert(`로그인 실패: ${error.message || "알 수 없는 오류"}`);
+
+        let message = `로그인 실패: ${error.message}`;
+
+        if (error.code === 'auth/popup-closed-by-user') {
+            message = "로그인 창을 닫으셨네요. 다시 시도해 주세요.";
+        } else if (error.code === 'auth/cancelled-popup-request') {
+            return; // Ignore multiple popup requests
+        } else if (error.code === 'auth/popup-blocked') {
+            message = "브라우저가 팝업을 차단했습니다. 팝업 차단을 해제해 주세요.";
+        } else if (error.code === 'auth/unauthorized-domain') {
+            message = "현재 도메인(localhost 등)이 Firebase 승인된 도메인 목록에 없습니다. 콘솔을 확인하세요.";
+        } else if (error.code === 'auth/network-request-failed') {
+            message = "네트워크 연결을 확인해 주세요.";
+        }
+
+        alert(message);
     }
 };
 
 export const loginWithEmail = async (email: string, password: string) => {
     try {
         await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Email Login failed", error);
-        throw error;
+        throw error; // Let the calling component handle this for UI feedback
     }
 };
 
