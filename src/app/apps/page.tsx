@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Brain, Rocket, Camera, ShoppingBag, ExternalLink } from "lucide-react";
+import { ArrowLeft, Brain, Rocket, Camera, ExternalLink } from "lucide-react";
 
 export default function AppniversePage() {
 
@@ -14,7 +14,7 @@ export default function AppniversePage() {
             icon: Brain,
             color: 'bg-yellow-400',
             textColor: 'text-yellow-900',
-            url: 'https://haewan-logic-math-quiz.vercel.app', // 예상 URL
+            url: 'https://jaeho-jang-dr.github.io/haewan-logic-math-quiz/',
             isExternal: true
         },
         {
@@ -24,17 +24,7 @@ export default function AppniversePage() {
             icon: Camera,
             color: 'bg-green-400',
             textColor: 'text-green-900',
-            url: 'https://hey-friends-one.vercel.app', // 예상 URL
-            isExternal: true
-        },
-        {
-            id: 'bomnal',
-            name: '봄날 쇼핑몰',
-            desc: '프리미엄 쇼핑의 시작',
-            icon: ShoppingBag,
-            color: 'bg-pink-400',
-            textColor: 'text-pink-900',
-            url: 'https://bomnal-shopping-mall.vercel.app', // 예상 URL
+            url: 'https://hey-friends.vercel.app',
             isExternal: true
         },
     ];
