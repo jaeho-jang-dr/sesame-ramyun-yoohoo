@@ -134,6 +134,8 @@ export default function GugudanPage() {
                     <div className="relative">
                         <input
                             type="number"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             value={answer}
                             onChange={(e) => setAnswer(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && answer && checkAnswer()}

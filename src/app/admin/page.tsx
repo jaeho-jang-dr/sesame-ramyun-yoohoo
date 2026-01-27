@@ -4,6 +4,9 @@ import { useAuthStore } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import Link from 'next/link';
+import { Home } from 'lucide-react';
+
 export default function AdminPage() {
     const { user, isAdmin, loading } = useAuthStore();
     const router = useRouter();
@@ -20,10 +23,19 @@ export default function AdminPage() {
     return (
         <div className="min-h-screen bg-gray-100 p-6">
             <header className="bg-white p-6 rounded-2xl shadow-sm mb-6 flex justify-between items-center">
-                <h1 className="text-2xl font-black text-gray-800">👑 혜완이네 관리자 페이지</h1>
+                <div className="flex items-center gap-4">
+                    <Link
+                        href="/"
+                        className="p-2.5 bg-gray-50 rounded-xl text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-all border border-gray-100 hover:border-purple-100"
+                        title="첫 페이지로 돌아가기"
+                    >
+                        <Home className="w-5 h-5" />
+                    </Link>
+                    <h1 className="text-2xl font-black text-gray-800">👑 혜완이네 관리자 페이지</h1>
+                </div>
                 <div className="flex items-center gap-2">
-                    <img src={user?.photoURL || ''} className="w-10 h-10 rounded-full border-2 border-purple-500" />
-                    <span className="font-bold">{user?.displayName}님</span>
+                    <img src={user?.photoURL || ''} className="w-10 h-10 rounded-full border-2 border-purple-500 bg-gray-200" />
+                    <span className="font-bold hidden sm:block">{user?.displayName}님</span>
                 </div>
             </header>
 

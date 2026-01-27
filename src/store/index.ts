@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Timetable, Notice, Book, Word, MoneyTransaction, CleaningTask, Meal, SavingsGoal } from '../types';
+import { Timetable, Notice, Book, Word, MoneyTransaction, CleaningTask, SavingsGoal, TimetableItem } from '../types';
 
 interface AppState {
     // 시간표
     timetable: Timetable;
     setTimetable: (data: Timetable) => void;
-    updateDayTimetable: (day: string, items: any[]) => void;
+    updateDayTimetable: (day: string, items: TimetableItem[]) => void;
 
     // 알림장
     notices: Notice[];
