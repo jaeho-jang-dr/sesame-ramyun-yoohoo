@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Bell, Utensils, Pencil, Brain, Book, Wallet, Brush, MessageCircle } from "lucide-react";
+import { Calendar, Bell, Utensils, Pencil, Brain, Book, Wallet, Brush, MessageCircle, Rocket } from "lucide-react";
 
 export function MainMenu() {
     const menuItems = [
@@ -12,6 +12,7 @@ export function MainMenu() {
         { href: "/money", icon: Wallet, label: "용돈 기입장", colorClass: "bg-indigo-50 text-indigo-600", desc: "똑똑한 소비" },
         { href: "/cleaning", icon: Brush, label: "청소/심부름", colorClass: "bg-teal-50 text-teal-600", desc: "나의 역할" },
         { href: "/guestbook", icon: MessageCircle, label: "방명록", colorClass: "bg-purple-50 text-purple-600", desc: "친구들의 이야기" },
+        { href: "/apps", icon: Rocket, label: "앱니버스", colorClass: "bg-slate-900 text-white shadow-lg shadow-purple-200 ring-2 ring-purple-400 ring-offset-2", desc: "우주로 출발! 🚀" },
     ];
 
     return (
