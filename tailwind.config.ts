@@ -6,20 +6,12 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  presets: [
+    // eslint-disable-next-line
+    require('../design-system/tailwind.preset.js')
+  ],
   theme: {
-    extend: {
-      colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        sesame: {
-          gold: '#F59E0B',
-          cream: '#FFF7ED',
-        },
-        yoohoo: {
-          pink: '#EC4899',
-        },
-      },
-    },
+    extend: {},
   },
   plugins: [],
 };
