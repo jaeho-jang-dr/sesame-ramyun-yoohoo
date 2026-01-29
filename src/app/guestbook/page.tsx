@@ -1,186 +1,465 @@
 "use client";
 
-import { useAuthStore } from '@/lib/auth';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
-import { Send, Trash2, ArrowLeft, Loader2, MessageCircle } from 'lucide-react';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useAuthStore } from "@/lib/auth";
+import {
+    collection,
+    addDoc,
+    getDocs,
+    deleteDoc,
+    doc,
+    orderBy,
+    query,
+    serverTimestamp,
+    updateDoc,
+    Timestamp,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import {
+    ArrowLeft,
+    Send,
+    Heart,
+    MessageCircle,
+    Trash2,
+    Edit3,
+    X,
+    Check,
+    Smile,
+    Sparkles,
+    Star,
+    ThumbsUp,
+    PartyPopper,
+    Flame,
+} from "lucide-react";
 
-interface GuestBookMessage {
+interface GuestbookEntry {
     id: string;
-    content: string;
-    userId: string;
-    userName: string;
-    userPhoto?: string;
-    createdAt: Timestamp | null;
+    message: string;
+    authorId: string;
+    authorName: string;
+    authorEmoji: string;
+    reactions: { [key: string]: string[] }; // emoji -> userId[]
+    createdAt: Timestamp;
+    updatedAt?: Timestamp;
 }
 
+const EMOJI_OPTIONS = ["😊", "😎", "🤗", "🦊", "🐰", "🐱", "🐶", "🦁", "🐼", "🐨", "🦋", "🌸"];
+
+const REACTION_EMOJIS = [
+    { emoji: "❤️", icon: Heart },
+    { emoji: "👍", icon: ThumbsUp },
+    { emoji: "⭐", icon: Star },
+    { emoji: "🔥", icon: Flame },
+    { emoji: "🎉", icon: PartyPopper },
+];
+
+const formatDate = (timestamp: Timestamp | null) => {
+    if (!timestamp) return "";
+    const date = timestamp.toDate();
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "방금 전";
+    if (diffMins < 60) return `${diffMins}분 전`;
+    if (diffHours < 24) return `${diffHours}시간 전`;
+    if (diffDays < 7) return `${diffDays}일 전`;
+
+    return date.toLocaleDateString("ko-KR", {
+        month: "long",
+        day: "numeric",
+    });
+};
+
 export default function GuestbookPage() {
-    const { user } = useAuthStore();
-    const router = useRouter();
-    const [messages, setMessages] = useState<GuestBookMessage[]>([]);
-    const [newMessage, setNewMessage] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const { user, isAdmin } = useAuthStore();
+    const [entries, setEntries] = useState<GuestbookEntry[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [newMessage, setNewMessage] = useState("");
+    const [selectedEmoji, setSelectedEmoji] = useState("😊");
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editMessage, setEditMessage] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
-    // 실시간 메시지 구독
     useEffect(() => {
-        const q = query(collection(db, "guestbook"), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const msgs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as GuestBookMessage));
-            setMessages(msgs);
-        });
-
-        return () => unsubscribe();
+        fetchEntries();
     }, []);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const fetchEntries = async () => {
+        try {
+            const q = query(collection(db, "guestbook"), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
+            const entriesList = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as GuestbookEntry[];
+            setEntries(entriesList);
+        } catch (error) {
+            console.error("Error fetching entries:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newMessage.trim() || !user) return;
+    const handleSubmit = async () => {
+        if (!newMessage.trim() || !user || submitting) return;
 
-        setIsSubmitting(true);
+        setSubmitting(true);
         try {
             await addDoc(collection(db, "guestbook"), {
-                content: newMessage,
-                userId: user.uid,
-                userName: user.displayName || '익명 친구',
-                userPhoto: user.photoURL,
-                createdAt: serverTimestamp()
+                message: newMessage.trim(),
+                authorId: user.uid,
+                authorName: user.displayName || "익명",
+                authorEmoji: selectedEmoji,
+                reactions: {},
+                createdAt: serverTimestamp(),
             });
-            setNewMessage('');
-            scrollToBottom();
+
+            setNewMessage("");
+            fetchEntries();
         } catch (error) {
-            console.error("Error adding document: ", error);
-            alert("메시지를 등록하지 못했어요!");
+            console.error("Error adding entry:", error);
+            alert("작성에 실패했습니다.");
         } finally {
-            setIsSubmitting(false);
+            setSubmitting(false);
         }
     };
 
-    const handleDelete = async (id: string, authorId: string) => {
-        if (!user || user.uid !== authorId) return;
-        if (!confirm("정말 이 메시지를 지울까요?")) return;
+    const handleUpdate = async (entryId: string) => {
+        if (!editMessage.trim()) return;
 
         try {
-            await deleteDoc(doc(db, "guestbook", id));
+            await updateDoc(doc(db, "guestbook", entryId), {
+                message: editMessage.trim(),
+                updatedAt: serverTimestamp(),
+            });
+
+            setEditingId(null);
+            setEditMessage("");
+            fetchEntries();
         } catch (error) {
-            console.error("Error deleting document: ", error);
-            alert("삭제에 실패했어요.");
+            console.error("Error updating entry:", error);
+            alert("수정에 실패했습니다.");
         }
     };
 
-    // 날짜 포맷팅
-    const formatDate = (timestamp: Timestamp | null) => {
-        if (!timestamp) return "";
-        const date = timestamp.toDate();
-        return new Intl.DateTimeFormat('ko-KR', {
-            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        }).format(date);
+    const handleDelete = async (entryId: string) => {
+        if (!confirm("정말 삭제할까요?")) return;
+
+        try {
+            await deleteDoc(doc(db, "guestbook", entryId));
+            fetchEntries();
+        } catch (error) {
+            console.error("Error deleting entry:", error);
+            alert("삭제에 실패했습니다.");
+        }
+    };
+
+    const handleReaction = async (entryId: string, emoji: string) => {
+        if (!user) {
+            alert("로그인이 필요합니다.");
+            return;
+        }
+
+        const entry = entries.find((e) => e.id === entryId);
+        if (!entry) return;
+
+        const currentReactions = entry.reactions || {};
+        const emojiReactions = currentReactions[emoji] || [];
+        const userIndex = emojiReactions.indexOf(user.uid);
+
+        let newReactions: { [key: string]: string[] };
+
+        if (userIndex > -1) {
+            // Remove reaction
+            newReactions = {
+                ...currentReactions,
+                [emoji]: emojiReactions.filter((id) => id !== user.uid),
+            };
+        } else {
+            // Add reaction
+            newReactions = {
+                ...currentReactions,
+                [emoji]: [...emojiReactions, user.uid],
+            };
+        }
+
+        // Clean up empty arrays
+        Object.keys(newReactions).forEach((key) => {
+            if (newReactions[key].length === 0) {
+                delete newReactions[key];
+            }
+        });
+
+        try {
+            await updateDoc(doc(db, "guestbook", entryId), {
+                reactions: newReactions,
+            });
+
+            // Update local state
+            setEntries(
+                entries.map((e) =>
+                    e.id === entryId ? { ...e, reactions: newReactions } : e
+                )
+            );
+        } catch (error) {
+            console.error("Error updating reaction:", error);
+        }
+    };
+
+    const canEditEntry = (entry: GuestbookEntry) => {
+        return isAdmin || (user && user.uid === entry.authorId);
+    };
+
+    const startEditing = (entry: GuestbookEntry) => {
+        setEditingId(entry.id);
+        setEditMessage(entry.message);
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] font-sans pb-24">
+        <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
             {/* Header */}
-            <header className="bg-white/90 backdrop-blur-sm p-4 shadow-sm sticky top-0 z-10 flex items-center justify-between border-b border-gray-100">
-                <Link href="/" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <ArrowLeft className="w-6 h-6 text-gray-600" />
-                </Link>
-                <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <MessageCircle className="w-5 h-5 text-green-600" />
-                    친구들 방명록
-                </h1>
-                <div className="w-10"></div> {/* Spacer */}
+            <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-20">
+                <div className="max-w-3xl mx-auto px-6 h-16 flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/"
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <ArrowLeft className="w-5 h-5 text-gray-600" />
+                        </Link>
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl">📝</span>
+                            <h1 className="text-xl font-bold text-gray-900">방문자 게시판</h1>
+                        </div>
+                    </div>
+                    <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        {entries.length}개의 글
+                    </span>
+                </div>
             </header>
 
-            {/* Message List */}
-            <main className="max-w-2xl mx-auto p-4 space-y-4">
-                {messages.length === 0 ? (
-                    <div className="text-center py-20 text-gray-400 flex flex-col items-center gap-2">
-                        <MessageCircle className="w-12 h-12 opacity-20" />
-                        <p>아직 아무도 다녀가지 않았어요.<br />첫 번째 주인공이 되어주세요!</p>
+            <main className="max-w-3xl mx-auto p-6">
+                {/* Hero */}
+                <section className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-2 right-10 text-5xl">💬</div>
+                        <div className="absolute bottom-2 left-10 text-5xl">✏️</div>
+                    </div>
+                    <div className="relative z-10">
+                        <h2 className="text-xl md:text-2xl font-bold mb-1">
+                            친구들의 이야기
+                        </h2>
+                        <p className="text-green-100 text-sm">
+                            응원의 메시지를 남겨주세요! 💚
+                        </p>
+                    </div>
+                </section>
+
+                {/* Write Form */}
+                {user ? (
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 mb-6">
+                        <div className="flex items-start gap-3">
+                            <button
+                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                className="w-12 h-12 rounded-xl bg-green-100 text-2xl flex items-center justify-center hover:bg-green-200 transition-colors flex-shrink-0"
+                            >
+                                {selectedEmoji}
+                            </button>
+                            <div className="flex-1">
+                                <textarea
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    placeholder="친구들에게 메시지를 남겨보세요..."
+                                    rows={3}
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none text-gray-700"
+                                />
+                                <div className="flex justify-between items-center mt-3">
+                                    <span className="text-xs text-gray-400">
+                                        {user.displayName || "익명"}으로 작성됩니다
+                                    </span>
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={!newMessage.trim() || submitting}
+                                        className="flex items-center gap-2 bg-green-600 text-white px-5 py-2 rounded-xl hover:bg-green-700 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <Send className="w-4 h-4" />
+                                        {submitting ? "작성 중..." : "남기기"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Emoji Picker */}
+                        {showEmojiPicker && (
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs text-gray-500 mb-2">프로필 이모지 선택</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {EMOJI_OPTIONS.map((emoji) => (
+                                        <button
+                                            key={emoji}
+                                            onClick={() => {
+                                                setSelectedEmoji(emoji);
+                                                setShowEmojiPicker(false);
+                                            }}
+                                            className={`
+                                                w-10 h-10 rounded-lg text-xl
+                                                transition-all hover:scale-110
+                                                ${selectedEmoji === emoji
+                                                    ? "bg-green-100 ring-2 ring-green-500"
+                                                    : "bg-gray-50 hover:bg-gray-100"
+                                                }
+                                            `}
+                                        >
+                                            {emoji}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
-                    messages.map((msg) => (
-                        <div key={msg.id} className={`flex gap-3 ${user?.uid === msg.userId ? 'flex-row-reverse' : ''}`}>
-                            {/* Avatar */}
-                            <div className="flex-shrink-0">
-                                {msg.userPhoto ? (
-                                    <img src={msg.userPhoto} alt={msg.userName} className="w-10 h-10 rounded-full border border-gray-200" />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg">
-                                        😊
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Bubble */}
-                            <div className={`flex flex-col max-w-[70%] ${user?.uid === msg.userId ? 'items-end' : 'items-start'}`}>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-xs font-bold text-gray-600">{msg.userName}</span>
-                                    <span className="text-[10px] text-gray-400">{formatDate(msg.createdAt)}</span>
-                                </div>
-                                <div className={`p-3 rounded-2xl text-sm shadow-sm relative group ${user?.uid === msg.userId
-                                        ? 'bg-green-100 text-green-900 rounded-tr-none'
-                                        : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                                    }`}>
-                                    {msg.content}
-
-                                    {user?.uid === msg.userId && (
-                                        <button
-                                            onClick={() => handleDelete(msg.id, msg.userId)}
-                                            className="absolute -left-8 top-1/2 -translate-y-1/2 p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                                            title="삭제"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    ))
+                    <div className="bg-gray-50 rounded-2xl p-6 mb-6 text-center border border-gray-200">
+                        <MessageCircle className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 mb-3">
+                            로그인하고 메시지를 남겨보세요!
+                        </p>
+                        <Link
+                            href="/login"
+                            className="inline-block bg-green-600 text-white px-5 py-2 rounded-xl hover:bg-green-700 transition-colors font-medium text-sm"
+                        >
+                            로그인하기
+                        </Link>
+                    </div>
                 )}
-                <div ref={messagesEndRef} />
-            </main>
 
-            {/* Input Area */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-                <div className="max-w-2xl mx-auto">
-                    {user ? (
-                        <form onSubmit={handleSubmit} className="flex gap-2">
-                            <input
-                                type="text"
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder="친구들에게 따뜻한 말을 남겨주세요!"
-                                className="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm"
-                                disabled={isSubmitting}
-                            />
-                            <button
-                                type="submit"
-                                disabled={!newMessage.trim() || isSubmitting}
-                                className="bg-green-500 text-white p-3 rounded-xl hover:bg-green-600 transition-colors disabled:bg-gray-300 flex items-center justify-center shadow-lg shadow-green-100"
+                {/* Entries List */}
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-600 border-t-transparent" />
+                    </div>
+                ) : entries.length === 0 ? (
+                    <div className="text-center py-16">
+                        <div className="text-6xl mb-4">📭</div>
+                        <h3 className="text-xl font-bold text-gray-700 mb-2">
+                            아직 글이 없어요
+                        </h3>
+                        <p className="text-gray-500">첫 번째 메시지를 남겨보세요!</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {entries.map((entry) => (
+                            <div
+                                key={entry.id}
+                                className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
                             >
-                                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                            </button>
-                        </form>
-                    ) : (
-                        <div className="text-center py-2">
-                            <Link href="/login" className="inline-block bg-gray-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors shadow-lg">
-                                로그인하고 글 남기기 🔒
-                            </Link>
-                        </div>
-                    )}
-                </div>
-            </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="w-11 h-11 rounded-xl bg-green-100 text-xl flex items-center justify-center flex-shrink-0">
+                                        {entry.authorEmoji || "😊"}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold text-gray-800">
+                                                    {entry.authorName}
+                                                </span>
+                                                <span className="text-xs text-gray-400">
+                                                    {formatDate(entry.createdAt)}
+                                                </span>
+                                                {entry.updatedAt && (
+                                                    <span className="text-xs text-gray-400">
+                                                        (수정됨)
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {canEditEntry(entry) && (
+                                                <div className="flex gap-1">
+                                                    <button
+                                                        onClick={() => startEditing(entry)}
+                                                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                                                    >
+                                                        <Edit3 className="w-3.5 h-3.5 text-gray-400" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(entry.id)}
+                                                        className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {editingId === entry.id ? (
+                                            <div className="space-y-3">
+                                                <textarea
+                                                    value={editMessage}
+                                                    onChange={(e) => setEditMessage(e.target.value)}
+                                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                                                    rows={3}
+                                                />
+                                                <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        onClick={() => setEditingId(null)}
+                                                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                                                    >
+                                                        취소
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleUpdate(entry.id)}
+                                                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                        저장
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-700 whitespace-pre-wrap break-words">
+                                                {entry.message}
+                                            </p>
+                                        )}
+
+                                        {/* Reactions */}
+                                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                                            {REACTION_EMOJIS.map(({ emoji }) => {
+                                                const reactions = entry.reactions?.[emoji] || [];
+                                                const hasReacted = user && reactions.includes(user.uid);
+                                                const count = reactions.length;
+
+                                                return (
+                                                    <button
+                                                        key={emoji}
+                                                        onClick={() => handleReaction(entry.id, emoji)}
+                                                        className={`
+                                                            flex items-center gap-1 px-2.5 py-1 rounded-full
+                                                            text-sm transition-all
+                                                            ${hasReacted
+                                                                ? "bg-green-100 text-green-700"
+                                                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                                            }
+                                                            ${count > 0 ? "" : "opacity-50 hover:opacity-100"}
+                                                        `}
+                                                    >
+                                                        <span>{emoji}</span>
+                                                        {count > 0 && (
+                                                            <span className="font-medium">{count}</span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </main>
         </div>
     );
 }

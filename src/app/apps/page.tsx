@@ -1,368 +1,477 @@
+```
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Rocket, ExternalLink, Plus, Trash2, Brain, Camera, Gamepad2, Star, Heart, Music, Video, Book, Palette, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, addDoc, deleteDoc, doc, query, orderBy, getDocs, writeBatch } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useAuthStore } from "@/lib/auth";
+import {
+    collection,
+    addDoc,
+    getDocs,
+    deleteDoc,
+    doc,
+    orderBy,
+    query,
+    serverTimestamp,
+    updateDoc,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import {
+    ArrowLeft,
+    Plus,
+    Sparkles,
+    Gamepad2,
+    Calculator,
+    Palette,
+    Music,
+    Camera,
+    BookOpen,
+    Globe,
+    Heart,
+    Star,
+    Trash2,
+    Edit3,
+    X,
+    Check,
+    Rocket,
+} from "lucide-react";
 
-// Icon Mapping System
-const ICON_MAP: Record<string, any> = {
-    'brain': Brain,
-    'camera': Camera,
-    'gamepad': Gamepad2,
-    'rocket': Rocket,
-    'star': Star,
-    'heart': Heart,
-    'music': Music,
-    'video': Video,
-    'book': Book,
-    'palette': Palette,
-    'zap': Zap,
-};
-
-// Color Theme System
-const COLOR_THEMES: Record<string, { bg: string, text: string, decoration: string }> = {
-    'yellow': { bg: 'bg-yellow-400', text: 'text-yellow-900', decoration: 'bg-yellow-400' },
-    'green': { bg: 'bg-green-400', text: 'text-green-900', decoration: 'bg-green-400' },
-    'red': { bg: 'bg-red-400', text: 'text-red-900', decoration: 'bg-red-400' },
-    'blue': { bg: 'bg-blue-400', text: 'text-blue-900', decoration: 'bg-blue-400' },
-    'purple': { bg: 'bg-purple-400', text: 'text-purple-900', decoration: 'bg-purple-400' },
-    'pink': { bg: 'bg-pink-400', text: 'text-pink-900', decoration: 'bg-pink-400' },
-    'orange': { bg: 'bg-orange-400', text: 'text-orange-900', decoration: 'bg-orange-400' },
-    'indigo': { bg: 'bg-indigo-400', text: 'text-indigo-900', decoration: 'bg-indigo-400' },
-};
-
-interface AppData {
+interface AppItem {
     id: string;
     name: string;
     description: string;
-    url: string;
-    iconKey: string;
-    themeKey: string;
-    createdAt: number;
-    isVisible?: boolean; // Visibility field
+    icon: string;
+    color: string;
+    link?: string;
+    createdAt: any;
+    createdBy: string;
+    createdByName: string;
 }
 
-// Initial Apps Data for Reset
-const INITIAL_APPS = [
-    {
-        name: '논리수학 퀴즈',
-        description: '재미있는 수학 퍼즐을 풀어보자!',
-        url: 'https://jaeho-jang-dr.github.io/haewan-logic-math-quiz/',
-        iconKey: 'brain',
-        themeKey: 'yellow',
-        isVisible: true
-    },
-    {
-        name: '혜완 프렌즈',
-        description: '우리들의 추억 사진관',
-        url: 'https://hey-friends.vercel.app',
-        iconKey: 'camera',
-        themeKey: 'green',
-        isVisible: true
-    },
-    {
-        name: '동물 텍스트 배틀',
-        description: '강력한 동물 친구들과의 텍스트 배틀!',
-        url: 'https://kid-text-battle.vercel.app/',
-        iconKey: 'gamepad',
-        themeKey: 'red',
-        isVisible: true
-    },
+const ICON_OPTIONS = [
+    { name: "Gamepad2", icon: Gamepad2, label: "게임" },
+    { name: "Calculator", icon: Calculator, label: "계산기" },
+    { name: "Palette", icon: Palette, label: "그림" },
+    { name: "Music", icon: Music, label: "음악" },
+    { name: "Camera", icon: Camera, label: "카메라" },
+    { name: "BookOpen", icon: BookOpen, label: "책" },
+    { name: "Globe", icon: Globe, label: "지구" },
+    { name: "Heart", icon: Heart, label: "하트" },
+    { name: "Star", icon: Star, label: "별" },
+    { name: "Rocket", icon: Rocket, label: "로켓" },
 ];
 
-export default function AppniversePage() {
-    const { user, isAdmin } = useAuthStore();
-    const [apps, setApps] = useState<AppData[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+const COLOR_OPTIONS = [
+    { name: "purple", bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200" },
+    { name: "blue", bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200" },
+    { name: "green", bg: "bg-green-100", text: "text-green-600", border: "border-green-200" },
+    { name: "pink", bg: "bg-pink-100", text: "text-pink-600", border: "border-pink-200" },
+    { name: "orange", bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-200" },
+    { name: "teal", bg: "bg-teal-100", text: "text-teal-600", border: "border-teal-200" },
+    { name: "red", bg: "bg-red-100", text: "text-red-600", border: "border-red-200" },
+    { name: "indigo", bg: "bg-indigo-100", text: "text-indigo-600", border: "border-indigo-200" },
+];
 
-    // Abstracted Form State
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        url: '',
-        iconKey: 'rocket',
-        themeKey: 'blue',
-    });
+const getIconComponent = (iconName: string) => {
+    const found = ICON_OPTIONS.find((opt) => opt.name === iconName);
+    return found ? found.icon : Sparkles;
+};
+
+const getColorClasses = (colorName: string) => {
+    const found = COLOR_OPTIONS.find((opt) => opt.name === colorName);
+    return found || COLOR_OPTIONS[0];
+};
+
+export default function AppsPage() {
+    const { user, isAdmin } = useAuthStore();
+    const [apps, setApps] = useState<AppItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [editingApp, setEditingApp] = useState<AppItem | null>(null);
+
+    // Form states
+    const [formName, setFormName] = useState("");
+    const [formDescription, setFormDescription] = useState("");
+    const [formIcon, setFormIcon] = useState("Gamepad2");
+    const [formColor, setFormColor] = useState("purple");
+    const [formLink, setFormLink] = useState("");
 
     useEffect(() => {
-        const q = query(collection(db, "apps"), orderBy("createdAt", "asc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const appList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                isVisible: true, // Default to true if not present
-                ...doc.data()
-            } as AppData));
-            setApps(appList);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
+        fetchApps();
     }, []);
 
-    const handleInitialize = async () => {
-        if (!confirm("기본 앱 데이터를 추가하시겠습니까?")) return;
+    const fetchApps = async () => {
         try {
-            const batch = writeBatch(db);
-            INITIAL_APPS.forEach(app => {
-                const docRef = doc(collection(db, "apps"));
-                batch.set(docRef, { ...app, createdAt: Date.now() });
-            });
-            await batch.commit();
-            alert("초기화 완료!");
+            const q = query(collection(db, "apps"), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
+            const appsList = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as AppItem[];
+            setApps(appsList);
         } catch (error) {
-            console.error(error);
-            alert("초기화 실패");
+            console.error("Error fetching apps:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`'${name}' 앱을 삭제하시겠습니까?`)) return;
+    const resetForm = () => {
+        setFormName("");
+        setFormDescription("");
+        setFormIcon("Gamepad2");
+        setFormColor("purple");
+        setFormLink("");
+        setEditingApp(null);
+    };
+
+    const openCreateModal = () => {
+        resetForm();
+        setShowModal(true);
+    };
+
+    const openEditModal = (app: AppItem) => {
+        setFormName(app.name);
+        setFormDescription(app.description);
+        setFormIcon(app.icon);
+        setFormColor(app.color);
+        setFormLink(app.link || "");
+        setEditingApp(app);
+        setShowModal(true);
+    };
+
+    const handleSubmit = async () => {
+        if (!formName.trim() || !user) return;
+
         try {
-            await deleteDoc(doc(db, "apps", id));
+            if (editingApp) {
+                // Update existing app
+                await updateDoc(doc(db, "apps", editingApp.id), {
+                    name: formName.trim(),
+                    description: formDescription.trim(),
+                    icon: formIcon,
+                    color: formColor,
+                    link: formLink.trim(),
+                });
+            } else {
+                // Create new app
+                await addDoc(collection(db, "apps"), {
+                    name: formName.trim(),
+                    description: formDescription.trim(),
+                    icon: formIcon,
+                    color: formColor,
+                    link: formLink.trim(),
+                    createdAt: serverTimestamp(),
+                    createdBy: user.uid,
+                    createdByName: user.displayName || "익명",
+                });
+            }
+
+            setShowModal(false);
+            resetForm();
+            fetchApps();
         } catch (error) {
-            console.error(error);
-            alert("삭제 실패");
+            console.error("Error saving app:", error);
+            alert("저장에 실패했습니다.");
         }
     };
 
-    const handleAddApp = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleDelete = async (appId: string) => {
+        if (!confirm("정말 삭제할까요?")) return;
+
         try {
-            await addDoc(collection(db, "apps"), {
-                ...formData,
-                createdAt: Date.now(),
-                isVisible: true // Default visible
-            });
-            setIsModalOpen(false);
-            setFormData({
-                name: '',
-                description: '',
-                url: '',
-                iconKey: 'rocket',
-                themeKey: 'blue',
-            });
+            await deleteDoc(doc(db, "apps", appId));
+            fetchApps();
         } catch (error) {
-            console.error(error);
-            alert("추가 실패");
+            console.error("Error deleting app:", error);
+            alert("삭제에 실패했습니다.");
         }
+    };
+
+    const canEditApp = (app: AppItem) => {
+        return isAdmin || (user && user.uid === app.createdBy);
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 font-sans text-white relative overflow-hidden">
-            {/* Background */}
-            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
-                backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-                backgroundSize: '20px 20px'
-            }}></div>
-
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
             {/* Header */}
-            <header className="p-6 relative z-10 flex items-center justify-between">
-                <Link href="/" className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all backdrop-blur-md">
-                    <ArrowLeft className="w-6 h-6 text-white" />
-                </Link>
-                <div className="flex items-center gap-2">
-                    <Rocket className="w-6 h-6 text-purple-400 animate-bounce" />
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                        앱니버스 (Appniverse)
-                    </h1>
+            <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-20">
+                <div className="max-w-5xl mx-auto px-6 h-16 flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/"
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <ArrowLeft className="w-5 h-5 text-gray-600" />
+                        </Link>
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl">🚀</span>
+                            <h1 className="text-xl font-bold text-gray-900">
+                                혜완이의 앱니버스
+                            </h1>
+                        </div>
+                    </div>
+
+                    {user && (
+                        <button
+                            onClick={openCreateModal}
+                            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-colors font-medium text-sm"
+                        >
+                            <Plus className="w-4 h-4" />
+                            새 앱 만들기
+                        </button>
+                    )}
                 </div>
-                <div className="w-12"></div> {/* Spacer for center alignment */}
             </header>
 
-            {/* Main Content */}
-            <main className="max-w-5xl mx-auto p-6 relative z-10">
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-5xl font-black mb-4 leading-tight">
-                        모든 앱이 연결되는 곳,<br />
-                        <span className="text-purple-400">혜완 유니버스</span>에 오신 것을 환영해요! 🪐
-                    </h2>
-                    <p className="text-slate-400 text-lg">원하는 앱으로 여행을 떠나볼까요?</p>
-                </div>
+            <main className="max-w-5xl mx-auto p-6">
+                {/* Hero Section */}
+                <section className="bg-gradient-to-r from-purple-600 to-pink-500 rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-4 left-10 text-6xl">🎮</div>
+                        <div className="absolute bottom-4 right-10 text-6xl">💡</div>
+                        <div className="absolute top-1/2 left-1/3 text-4xl">✨</div>
+                    </div>
+                    <div className="relative z-10">
+                        <h2 className="text-2xl md:text-3xl font-bold mb-2">
+                            나만의 앱을 만들어보세요!
+                        </h2>
+                        <p className="text-purple-100 text-sm md:text-base">
+                            상상력을 발휘해서 멋진 앱 아이디어를 등록하고 친구들과 공유해요 🌟
+                        </p>
+                        <div className="mt-4 flex items-center gap-4 text-sm">
+                            <span className="bg-white/20 px-3 py-1 rounded-full">
+                                총 {apps.length}개의 앱
+                            </span>
+                        </div>
+                    </div>
+                </section>
 
-                {/* Initializing for Admin when empty */}
-                {isAdmin && apps.length === 0 && !loading && (
-                    <div className="text-center mb-8">
-                        <button
-                            onClick={handleInitialize}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-all shadow-lg hover:shadow-blue-500/50"
-                        >
-                            🚀 초기 앱 데이터 자동 생성하기
-                        </button>
+                {/* Apps Grid */}
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-600 border-t-transparent" />
+                    </div>
+                ) : apps.length === 0 ? (
+                    <div className="text-center py-20">
+                        <div className="text-6xl mb-4">🎨</div>
+                        <h3 className="text-xl font-bold text-gray-700 mb-2">
+                            아직 앱이 없어요
+                        </h3>
+                        <p className="text-gray-500 mb-6">
+                            첫 번째 앱을 만들어 보세요!
+                        </p>
+                        {user && (
+                            <button
+                                onClick={openCreateModal}
+                                className="bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors font-medium"
+                            >
+                                앱 만들기 시작
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {apps.map((app) => {
+                            const IconComponent = getIconComponent(app.icon);
+                            const colors = getColorClasses(app.color);
+
+                            return (
+                                <div
+                                    key={app.id}
+                                    className={`
+bg - white rounded - 2xl p - 6 border - 2 ${ colors.border }
+hover: shadow - lg hover: -translate - y - 1 transition - all duration - 200
+                                        relative group
+    `}
+                                >
+                                    {canEditApp(app) && (
+                                        <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => openEditModal(app)}
+                                                className="p-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                            >
+                                                <Edit3 className="w-3.5 h-3.5 text-gray-600" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(app.id)}
+                                                className="p-1.5 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <div
+                                        className={`
+w - 16 h - 16 ${ colors.bg } rounded - 2xl
+                                            flex items - center justify - center mb - 4
+    `}
+                                    >
+                                        <IconComponent className={`w - 8 h - 8 ${ colors.text } `} />
+                                    </div>
+
+                                    <h3 className="text-lg font-bold text-gray-800 mb-1">
+                                        {app.name}
+                                    </h3>
+                                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">
+                                        {app.description || "설명이 없습니다"}
+                                    </p>
+
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-gray-400">
+                                            by {app.createdByName}
+                                        </span>
+                                        {app.link && (
+                                            <a
+                                                href={app.link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`
+text - xs font - medium ${ colors.text }
+hover: underline
+    `}
+                                            >
+                                                실행하기 →
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {/* Add App Button for Admin */}
-                    {isAdmin && (
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="group relative h-full min-h-[300px] border-2 border-dashed border-purple-500/30 hover:border-purple-500/60 rounded-3xl flex flex-col items-center justify-center transition-all bg-purple-500/5 hover:bg-purple-500/10"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                <Plus className="w-8 h-8 text-purple-400" />
-                            </div>
-                            <span className="text-purple-300 font-bold text-lg">새로운 앱 추가하기</span>
-                        </button>
-                    )}
-
-                    {apps.map((app) => {
-                        // Visibility Logic: Hide invisible apps for non-admins
-                        if (!isAdmin && app.isVisible === false) return null;
-
-                        const IconComponent = ICON_MAP[app.iconKey] || Rocket;
-                        const theme = COLOR_THEMES[app.themeKey] || COLOR_THEMES['blue'];
-                        const isHidden = app.isVisible === false;
-
-                        return (
-                            <div key={app.id} className={`group relative block h-full ${isHidden ? 'opacity-50 grayscale' : ''}`}>
-                                {/* Admin Actions */}
-                                {isAdmin && (
-                                    <div className="absolute top-4 right-4 z-20 flex gap-2">
-                                        {isHidden && (
-                                            <span className="px-2 py-1 bg-gray-800 text-gray-300 text-xs font-bold rounded-lg border border-gray-600 bg-opacity-80 backdrop-blur-sm">
-                                                🔒 비공개
-                                            </span>
-                                        )}
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault(); // Prevent link click
-                                                handleDelete(app.id, app.name);
-                                            }}
-                                            className="p-2 bg-red-500/80 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
-                                            title="앱 삭제"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                )}
-
-                                <a
-                                    href={app.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block h-full"
-                                >
-                                    <div className={`
-                                        absolute inset-0 rounded-3xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-300
-                                        ${theme.decoration}
-                                    `}></div>
-                                    <div className="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 p-8 rounded-3xl hover:-translate-y-2 hover:border-white/30 transition-all duration-300 h-full flex flex-col items-center text-center group-hover:bg-slate-800/80">
-                                        <div className={`w-20 h-20 rounded-2xl ${theme.bg} flex items-center justify-center mb-6 shadow-lg shadow-black/20 group-hover:scale-110 transition-transform duration-300`}>
-                                            <IconComponent className={`w-10 h-10 ${theme.text}`} />
-                                        </div>
-
-                                        <h3 className="text-2xl font-bold mb-2 group-hover:text-purple-300 transition-colors">{app.name}</h3>
-                                        <p className="text-slate-400 mb-6 flex-1 break-keep">{app.description}</p>
-
-                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-300 group-hover:text-white transition-colors bg-white/5 py-2 px-4 rounded-full">
-                                            <span>실행하기</span>
-                                            <ExternalLink className="w-4 h-4" />
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                        );
-                    })}
-
-                    {/* Coming Soon Card */}
-                    {!isAdmin && (
-                        <div className="bg-slate-800/30 border border-dashed border-white/10 p-8 rounded-3xl flex flex-col items-center justify-center text-center min-h-[300px] hover:bg-slate-800/50 transition-colors cursor-default">
-                            <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mb-4 text-3xl">
-                                🚀
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-500 mb-2">새로운 앱 준비 중...</h3>
-                            <p className="text-slate-600 text-sm">다음에 또 만나요!</p>
-                        </div>
-                    )}
-                </div>
             </main>
 
-            {/* Add App Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-slate-800 rounded-3xl p-6 w-full max-w-md border border-white/10 shadow-2xl">
-                        <h2 className="text-2xl font-bold mb-6 text-white text-center">✨ 새로운 앱 추가</h2>
-                        <form onSubmit={handleAddApp} className="space-y-4">
+            {/* Create/Edit Modal */}
+            {showModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-800">
+                                {editingApp ? "앱 수정하기" : "새 앱 만들기"}
+                            </h2>
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-5">
+                            {/* App Name */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-1">앱 이름</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    앱 이름 *
+                                </label>
                                 <input
-                                    required
                                     type="text"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
-                                    placeholder="예: 재미있는 퀴즈"
+                                    value={formName}
+                                    onChange={(e) => setFormName(e.target.value)}
+                                    placeholder="예: 나만의 계산기"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                 />
                             </div>
+
+                            {/* Description */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-1">설명</label>
-                                <input
-                                    required
-                                    type="text"
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
-                                    placeholder="앱에 대한 간단한 설명"
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    설명
+                                </label>
+                                <textarea
+                                    value={formDescription}
+                                    onChange={(e) => setFormDescription(e.target.value)}
+                                    placeholder="어떤 앱인가요?"
+                                    rows={3}
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                                 />
                             </div>
+
+                            {/* Icon Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-1">URL 주소</label>
-                                <input
-                                    required
-                                    type="url"
-                                    value={formData.url}
-                                    onChange={e => setFormData({ ...formData, url: e.target.value })}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
-                                    placeholder="https://"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-400 mb-1">아이콘</label>
-                                    <select
-                                        value={formData.iconKey}
-                                        onChange={e => setFormData({ ...formData, iconKey: e.target.value })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500 appearance-none"
-                                    >
-                                        {Object.keys(ICON_MAP).map(key => (
-                                            <option key={key} value={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-400 mb-1">테마 색상</label>
-                                    <select
-                                        value={formData.themeKey}
-                                        onChange={e => setFormData({ ...formData, themeKey: e.target.value })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500 appearance-none"
-                                    >
-                                        {Object.keys(COLOR_THEMES).map(key => (
-                                            <option key={key} value={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</option>
-                                        ))}
-                                    </select>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    아이콘 선택
+                                </label>
+                                <div className="grid grid-cols-5 gap-2">
+                                    {ICON_OPTIONS.map((opt) => {
+                                        const Icon = opt.icon;
+                                        return (
+                                            <button
+                                                key={opt.name}
+                                                onClick={() => setFormIcon(opt.name)}
+                                                className={`
+p - 3 rounded - xl border - 2 transition - all
+                                                    ${
+    formIcon === opt.name
+        ? "border-purple-500 bg-purple-50"
+        : "border-gray-200 hover:border-gray-300"
+}
+`}
+                                            >
+                                                <Icon className={`w - 5 h - 5 mx - auto ${ formIcon === opt.name ? "text-purple-600" : "text-gray-500" } `} />
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 mt-6 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 py-3 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors"
-                                >
-                                    취소
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold transition-all shadow-lg shadow-purple-500/30"
-                                >
-                                    추가하기
-                                </button>
+                            {/* Color Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    색상 선택
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {COLOR_OPTIONS.map((opt) => (
+                                        <button
+                                            key={opt.name}
+                                            onClick={() => setFormColor(opt.name)}
+                                            className={`
+w - 10 h - 10 rounded - full ${ opt.bg }
+border - 2 transition - all
+                                                ${
+    formColor === opt.name
+        ? "border-gray-800 scale-110"
+        : "border-transparent hover:scale-105"
+}
+`}
+                                        />
+                                    ))}
+                                </div>
                             </div>
-                        </form>
+
+                            {/* Link */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    링크 주소
+                                </label>
+                                <input
+                                    type="url"
+                                    value={formLink}
+                                    onChange={(e) => setFormLink(e.target.value)}
+                                    placeholder="https://"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-gray-100 flex gap-3">
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleSubmit}
+                                disabled={!formName.trim()}
+                                className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                <Check className="w-4 h-4" />
+                                {editingApp ? "저장하기" : "만들기"}
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             )}
