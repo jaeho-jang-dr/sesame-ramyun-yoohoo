@@ -182,7 +182,21 @@
 
 ---
 
-## 29. 검증 (Verification)
+## 30. 방명록 삭제 실패 오류 및 답글 삭제 권한 해결
+* **오류내용**: 
+  1. 방명록 글을 삭제할 때 하위 답글(댓글)을 먼저 삭제하도록 구현되어 있으나, 타인이 단 답글이 있을 경우 Firestore Rules에 의해 일반 사용자가 답글을 삭제할 수 없어 전체 방명록 글 삭제가 권한 에러(PERMISSION_DENIED)로 실패하는 현상.
+  2. 로컬에서 수정된 최신 `firestore.rules`가 Firebase 서버에 배포되지 않아 발생했을 가능성.
+* **해결방법**:
+  1. `firestore.rules` 파일 내 `match /comments/{commentId}` 규칙을 수정하여, 본인 댓글이나 관리자뿐만 아니라 **해당 방명록 글의 소유자(게시글 작성자)**도 하위 댓글을 삭제할 수 있도록 `allow delete` 권한에 `request.auth.uid == get(/databases/$(database)/documents/guestbook/$(messageId)).data.authorId` 조건을 추가합니다.
+  2. 수정 후 Firebase CLI를 통해 규칙을 배포하는 명령어를 실행합니다 (`npx firebase deploy --only firestore:rules`).
+* **Claude 명령어**:
+  ```bash
+  claude "firestore.rules 파일을 수정해 줘. guestbook 컬렉션 내의 comments 서브컬렉션 delete 규칙(match /comments/{commentId}의 allow delete)에 '해당 방명록 글의 소유자(게시글 작성자)'도 삭제할 수 있도록 조건을 추가해 줘. 즉, 기존 조건에 || request.auth.uid == get(/databases/\$(database)/documents/guestbook/\$(messageId)).data.authorId 를 추가해서 방명록 글 소유자가 글을 지울 때 하위 댓글들도 정상적으로 삭제되게 해 줘. 그리고 수정이 끝나면 npx firebase deploy --only firestore:rules 명령어를 직접 실행해서 Firebase 서버에 규칙을 배포해 줘."
+  ```
+
+---
+
+## 31. 검증 (Verification)
 모든 변경 사항이 완료된 후, 린트 오류 및 빌드를 확인하여 최종 검증합니다.
 * **실행 명령어**:
   ```bash
@@ -190,11 +204,3 @@
   npm run build
   npm run test
   ```
-
-
-
-
-
-
-
-
