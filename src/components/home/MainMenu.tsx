@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Bell, Utensils, Pencil, Brain, Book, Wallet, Brush, MessageCircle, Rocket } from "lucide-react";
+import { Calendar, Bell, Utensils, Pencil, Brain, Book, Wallet, Brush } from "lucide-react";
 
 export function MainMenu() {
     const menuItems = [

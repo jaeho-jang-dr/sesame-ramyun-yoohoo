@@ -5,7 +5,7 @@ import { useSchoolStore } from "@/store/useSchoolStore";
 import SquishyButton from "@/components/ui/SquishyButton";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import { Plus, Trash2, CheckCircle2, Circle, Pin } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Notices() {
@@ -14,6 +14,7 @@ export default function Notices() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration guard
     setMounted(true);
   }, []);
 

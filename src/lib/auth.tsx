@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 // import { useRouter } from 'next/navigation'; // Not used
 import { signInWithPopup, onAuthStateChanged, User, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 import { auth, googleProvider } from '@/lib/firebase';
 import { create } from 'zustand';
 
@@ -44,20 +45,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const loginWithGoogle = async () => {
     try {
         await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
+    } catch (error) {
         console.error("Login failed", error);
 
-        let message = `로그인 실패: ${error.message}`;
+        const code = error instanceof FirebaseError ? error.code : "";
+        const detail = error instanceof Error ? error.message : String(error);
+        let message = `로그인 실패: ${detail}`;
 
-        if (error.code === 'auth/popup-closed-by-user') {
+        if (code === 'auth/popup-closed-by-user') {
             message = "로그인 창을 닫으셨네요. 다시 시도해 주세요.";
-        } else if (error.code === 'auth/cancelled-popup-request') {
+        } else if (code === 'auth/cancelled-popup-request') {
             return; // Ignore multiple popup requests
-        } else if (error.code === 'auth/popup-blocked') {
+        } else if (code === 'auth/popup-blocked') {
             message = "브라우저가 팝업을 차단했습니다. 팝업 차단을 해제해 주세요.";
-        } else if (error.code === 'auth/unauthorized-domain') {
+        } else if (code === 'auth/unauthorized-domain') {
             message = "현재 도메인(localhost 등)이 Firebase 승인된 도메인 목록에 없습니다. 콘솔을 확인하세요.";
-        } else if (error.code === 'auth/network-request-failed') {
+        } else if (code === 'auth/network-request-failed') {
             message = "네트워크 연결을 확인해 주세요.";
         }
 
@@ -68,7 +71,7 @@ export const loginWithGoogle = async () => {
 export const loginWithEmail = async (email: string, password: string) => {
     try {
         await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
+    } catch (error) {
         console.error("Email Login failed", error);
         throw error; // Let the calling component handle this for UI feedback
     }

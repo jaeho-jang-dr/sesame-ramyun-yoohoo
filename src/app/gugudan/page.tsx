@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, RefreshCw, Trophy } from "lucide-react";
+import { ArrowLeft, Trophy } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useStore } from "@/store";
 
@@ -20,16 +20,21 @@ export default function GugudanPage() {
     const [isActive, setIsActive] = useState(false);
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (isActive && timeLeft > 0) {
-            interval = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-        } else if (timeLeft === 0) {
-            setIsActive(false);
-            setMode('practice');
-            alert(`시간 종료! ⏰ 최종 점수: ${combo}점`);
-        }
+        if (!isActive) return;
+        const interval = setInterval(() => {
+            setTimeLeft((t) => {
+                if (t <= 1) {
+                    clearInterval(interval);
+                    setIsActive(false);
+                    setMode('practice');
+                    alert(`시간 종료! ⏰ 최종 점수: ${combo}점`);
+                    return 0;
+                }
+                return t - 1;
+            });
+        }, 1000);
         return () => clearInterval(interval);
-    }, [isActive, timeLeft, combo]);
+    }, [isActive, combo]);
 
     const startChallenge = () => {
         setMode('challenge');

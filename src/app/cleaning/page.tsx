@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, CheckCircle, Trash2, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, CheckCircle, Sparkles } from "lucide-react";
 import { useStore } from "@/store";
 import confetti from "canvas-confetti";
 

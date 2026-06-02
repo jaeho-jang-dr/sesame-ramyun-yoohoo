@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ScheduleItem } from '@/components/school/CircularSchedule';
 
 // 구글 캘린더 색상 ID를 예쁜 CSS 색상으로 매핑
@@ -29,7 +29,7 @@ export function useGoogleCalendar(apiKey: string | null, calendarId: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     if (!apiKey) return;
 
     setLoading(true);
@@ -87,13 +87,13 @@ export function useGoogleCalendar(apiKey: string | null, calendarId: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiKey, calendarId]);
 
   useEffect(() => {
     if (apiKey) {
       fetchEvents();
     }
-  }, [apiKey, calendarId]);
+  }, [apiKey, fetchEvents]);
 
   return { events, loading, error, refresh: fetchEvents };
 }

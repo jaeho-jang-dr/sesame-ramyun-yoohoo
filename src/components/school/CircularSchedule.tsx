@@ -1,7 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
-
 /**
  * 시간(HH:MM)을 각도(degree)로 변환
  * 00:00 -> -90deg (top)

@@ -4,6 +4,7 @@ import { useAuthStore, loginWithGoogle, loginWithEmail, signUpWithEmail } from '
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Mail, Lock, User as UserIcon, ArrowRight, Loader2 } from 'lucide-react';
+import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
     const { user } = useAuthStore();
@@ -36,13 +37,14 @@ export default function LoginPage() {
                 await signUpWithEmail(email, password, name);
             }
             router.push('/');
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+            const code = err instanceof FirebaseError ? err.code : "";
+            if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
                 setError("이메일이나 비밀번호가 틀렸어요.");
-            } else if (err.code === 'auth/email-already-in-use') {
+            } else if (code === 'auth/email-already-in-use') {
                 setError("이미 가입된 이메일이에요.");
-            } else if (err.code === 'auth/weak-password') {
+            } else if (code === 'auth/weak-password') {
                 setError("비밀번호는 6자리 이상이어야 해요.");
             } else {
                 setError("오류가 발생했어요. 다시 시도해주세요.");
@@ -157,6 +159,7 @@ export default function LoginPage() {
                     onClick={() => loginWithGoogle()}
                     className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 p-3.5 rounded-xl hover:bg-gray-50 transition-colors"
                 >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- external icon, not worth next/image config */}
                     <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="google logo" />
                     <span className="font-bold text-gray-700 text-sm">구글 계정으로 시작하기</span>
                 </button>

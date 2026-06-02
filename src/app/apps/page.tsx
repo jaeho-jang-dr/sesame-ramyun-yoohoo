@@ -1,4 +1,3 @@
-```
 "use client";
 
 import { useState, useEffect } from "react";
@@ -43,7 +42,7 @@ interface AppItem {
     icon: string;
     color: string;
     link?: string;
-    createdAt: any;
+    createdAt: unknown;
     createdBy: string;
     createdByName: string;
 }
@@ -89,7 +88,6 @@ export default function AppsPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingApp, setEditingApp] = useState<AppItem | null>(null);
 
-    // Form states
     const [formName, setFormName] = useState("");
     const [formDescription, setFormDescription] = useState("");
     const [formIcon, setFormIcon] = useState("Gamepad2");
@@ -104,9 +102,9 @@ export default function AppsPage() {
         try {
             const q = query(collection(db, "apps"), orderBy("createdAt", "desc"));
             const snapshot = await getDocs(q);
-            const appsList = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
+            const appsList = snapshot.docs.map((d) => ({
+                id: d.id,
+                ...d.data(),
             })) as AppItem[];
             setApps(appsList);
         } catch (error) {
@@ -145,7 +143,6 @@ export default function AppsPage() {
 
         try {
             if (editingApp) {
-                // Update existing app
                 await updateDoc(doc(db, "apps", editingApp.id), {
                     name: formName.trim(),
                     description: formDescription.trim(),
@@ -154,7 +151,6 @@ export default function AppsPage() {
                     link: formLink.trim(),
                 });
             } else {
-                // Create new app
                 await addDoc(collection(db, "apps"), {
                     name: formName.trim(),
                     description: formDescription.trim(),
@@ -194,21 +190,15 @@ export default function AppsPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-            {/* Header */}
             <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-20">
                 <div className="max-w-5xl mx-auto px-6 h-16 flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <Link
-                            href="/"
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
+                        <Link href="/" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                             <ArrowLeft className="w-5 h-5 text-gray-600" />
                         </Link>
                         <div className="flex items-center gap-2">
                             <span className="text-2xl">🚀</span>
-                            <h1 className="text-xl font-bold text-gray-900">
-                                혜완이의 앱니버스
-                            </h1>
+                            <h1 className="text-xl font-bold text-gray-900">혜완이의 앱니버스</h1>
                         </div>
                     </div>
 
@@ -225,7 +215,6 @@ export default function AppsPage() {
             </header>
 
             <main className="max-w-5xl mx-auto p-6">
-                {/* Hero Section */}
                 <section className="bg-gradient-to-r from-purple-600 to-pink-500 rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
                     <div className="absolute inset-0 opacity-10">
                         <div className="absolute top-4 left-10 text-6xl">🎮</div>
@@ -233,21 +222,16 @@ export default function AppsPage() {
                         <div className="absolute top-1/2 left-1/3 text-4xl">✨</div>
                     </div>
                     <div className="relative z-10">
-                        <h2 className="text-2xl md:text-3xl font-bold mb-2">
-                            나만의 앱을 만들어보세요!
-                        </h2>
+                        <h2 className="text-2xl md:text-3xl font-bold mb-2">나만의 앱을 만들어보세요!</h2>
                         <p className="text-purple-100 text-sm md:text-base">
                             상상력을 발휘해서 멋진 앱 아이디어를 등록하고 친구들과 공유해요 🌟
                         </p>
                         <div className="mt-4 flex items-center gap-4 text-sm">
-                            <span className="bg-white/20 px-3 py-1 rounded-full">
-                                총 {apps.length}개의 앱
-                            </span>
+                            <span className="bg-white/20 px-3 py-1 rounded-full">총 {apps.length}개의 앱</span>
                         </div>
                     </div>
                 </section>
 
-                {/* Apps Grid */}
                 {loading ? (
                     <div className="flex justify-center items-center py-20">
                         <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-600 border-t-transparent" />
@@ -255,12 +239,8 @@ export default function AppsPage() {
                 ) : apps.length === 0 ? (
                     <div className="text-center py-20">
                         <div className="text-6xl mb-4">🎨</div>
-                        <h3 className="text-xl font-bold text-gray-700 mb-2">
-                            아직 앱이 없어요
-                        </h3>
-                        <p className="text-gray-500 mb-6">
-                            첫 번째 앱을 만들어 보세요!
-                        </p>
+                        <h3 className="text-xl font-bold text-gray-700 mb-2">아직 앱이 없어요</h3>
+                        <p className="text-gray-500 mb-6">첫 번째 앱을 만들어 보세요!</p>
                         {user && (
                             <button
                                 onClick={openCreateModal}
@@ -279,11 +259,7 @@ export default function AppsPage() {
                             return (
                                 <div
                                     key={app.id}
-                                    className={`
-bg - white rounded - 2xl p - 6 border - 2 ${ colors.border }
-hover: shadow - lg hover: -translate - y - 1 transition - all duration - 200
-                                        relative group
-    `}
+                                    className={`bg-white rounded-2xl p-6 border-2 ${colors.border} hover:shadow-lg hover:-translate-y-1 transition-all duration-200 relative group`}
                                 >
                                     {canEditApp(app) && (
                                         <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -302,35 +278,23 @@ hover: shadow - lg hover: -translate - y - 1 transition - all duration - 200
                                         </div>
                                     )}
 
-                                    <div
-                                        className={`
-w - 16 h - 16 ${ colors.bg } rounded - 2xl
-                                            flex items - center justify - center mb - 4
-    `}
-                                    >
-                                        <IconComponent className={`w - 8 h - 8 ${ colors.text } `} />
+                                    <div className={`w-16 h-16 ${colors.bg} rounded-2xl flex items-center justify-center mb-4`}>
+                                        <IconComponent className={`w-8 h-8 ${colors.text}`} />
                                     </div>
 
-                                    <h3 className="text-lg font-bold text-gray-800 mb-1">
-                                        {app.name}
-                                    </h3>
+                                    <h3 className="text-lg font-bold text-gray-800 mb-1">{app.name}</h3>
                                     <p className="text-sm text-gray-500 mb-4 line-clamp-2">
                                         {app.description || "설명이 없습니다"}
                                     </p>
 
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs text-gray-400">
-                                            by {app.createdByName}
-                                        </span>
+                                        <span className="text-xs text-gray-400">by {app.createdByName}</span>
                                         {app.link && (
                                             <a
                                                 href={app.link}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className={`
-text - xs font - medium ${ colors.text }
-hover: underline
-    `}
+                                                className={`text-xs font-medium ${colors.text} hover:underline`}
                                             >
                                                 실행하기 →
                                             </a>
@@ -343,7 +307,6 @@ hover: underline
                 )}
             </main>
 
-            {/* Create/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -360,11 +323,8 @@ hover: underline
                         </div>
 
                         <div className="p-6 space-y-5">
-                            {/* App Name */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    앱 이름 *
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">앱 이름 *</label>
                                 <input
                                     type="text"
                                     value={formName}
@@ -374,11 +334,8 @@ hover: underline
                                 />
                             </div>
 
-                            {/* Description */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    설명
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">설명</label>
                                 <textarea
                                     value={formDescription}
                                     onChange={(e) => setFormDescription(e.target.value)}
@@ -388,11 +345,8 @@ hover: underline
                                 />
                             </div>
 
-                            {/* Icon Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    아이콘 선택
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">아이콘 선택</label>
                                 <div className="grid grid-cols-5 gap-2">
                                     {ICON_OPTIONS.map((opt) => {
                                         const Icon = opt.icon;
@@ -400,56 +354,47 @@ hover: underline
                                             <button
                                                 key={opt.name}
                                                 onClick={() => setFormIcon(opt.name)}
-                                                className={`
-p - 3 rounded - xl border - 2 transition - all
-                                                    ${
-    formIcon === opt.name
-        ? "border-purple-500 bg-purple-50"
-        : "border-gray-200 hover:border-gray-300"
-}
-`}
+                                                className={`p-3 rounded-xl border-2 transition-all ${
+                                                    formIcon === opt.name
+                                                        ? "border-purple-500 bg-purple-50"
+                                                        : "border-gray-200 hover:border-gray-300"
+                                                }`}
                                             >
-                                                <Icon className={`w - 5 h - 5 mx - auto ${ formIcon === opt.name ? "text-purple-600" : "text-gray-500" } `} />
+                                                <Icon
+                                                    className={`w-5 h-5 mx-auto ${
+                                                        formIcon === opt.name ? "text-purple-600" : "text-gray-500"
+                                                    }`}
+                                                />
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* Color Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    색상 선택
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">색상 선택</label>
                                 <div className="flex flex-wrap gap-2">
                                     {COLOR_OPTIONS.map((opt) => (
                                         <button
                                             key={opt.name}
                                             onClick={() => setFormColor(opt.name)}
-                                            className={`
-w - 10 h - 10 rounded - full ${ opt.bg }
-border - 2 transition - all
-                                                ${
-    formColor === opt.name
-        ? "border-gray-800 scale-110"
-        : "border-transparent hover:scale-105"
-}
-`}
+                                            className={`w-10 h-10 rounded-full ${opt.bg} border-2 transition-all ${
+                                                formColor === opt.name
+                                                    ? "border-gray-800 scale-110"
+                                                    : "border-transparent hover:scale-105"
+                                            }`}
                                         />
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Link */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    링크 주소
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">링크 주소</label>
                                 <input
                                     type="url"
                                     value={formLink}
                                     onChange={(e) => setFormLink(e.target.value)}
-                                    placeholder="https://"
+                                    placeholder="https:// 또는 /games/파일명.html"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                 />
                             </div>
@@ -471,7 +416,6 @@ border - 2 transition - all
                                 {editingApp ? "저장하기" : "만들기"}
                             </button>
                         </div>
-
                     </div>
                 </div>
             )}

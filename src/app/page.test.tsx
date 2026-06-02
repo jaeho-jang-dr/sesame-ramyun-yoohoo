@@ -1,6 +1,21 @@
 import { render, screen } from '@testing-library/react'
 import Home from './page'
 import '@testing-library/jest-dom'
+import { useAuthStore } from '@/lib/auth'
+
+// Mock Firebase
+jest.mock('@/lib/firebase', () => ({
+    app: {},
+    auth: {},
+    db: {},
+    storage: {},
+    googleProvider: {},
+}))
+
+jest.mock('firebase/firestore', () => ({
+    collection: jest.fn(),
+    onSnapshot: jest.fn(() => jest.fn()),
+}))
 
 // Mock the auth store
 jest.mock('@/lib/auth', () => ({
@@ -8,8 +23,7 @@ jest.mock('@/lib/auth', () => ({
     logout: jest.fn(),
 }))
 
-// Define a type for the store mock
-const mockUseAuthStore = require('@/lib/auth').useAuthStore
+const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
 
 describe('Home Page', () => {
     beforeEach(() => {

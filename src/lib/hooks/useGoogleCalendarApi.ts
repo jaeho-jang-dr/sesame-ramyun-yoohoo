@@ -6,10 +6,53 @@ const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v
 const SCOPES = "https://www.googleapis.com/auth/calendar";
 
 // Type definitions for Google API
+interface GoogleCalendarItem {
+  id: string;
+  summary?: string;
+  colorId?: string;
+  start: { dateTime?: string; date?: string };
+  end: { dateTime?: string; date?: string };
+}
+
+interface GapiCalendarEvents {
+  list: (request: Record<string, unknown>) => Promise<{ result: { items?: GoogleCalendarItem[] } }>;
+  insert: (request: Record<string, unknown>) => Promise<unknown>;
+  delete: (request: Record<string, unknown>) => Promise<unknown>;
+}
+
+interface GapiClient {
+  init: (config: { apiKey: string | null; discoveryDocs: string[] }) => Promise<void>;
+  getToken: () => { access_token: string } | null;
+  setToken: (token: null) => void;
+  calendar: { events: GapiCalendarEvents };
+}
+
+interface Gapi {
+  load: (api: string, callback: () => void) => void;
+  client: GapiClient;
+}
+
+interface GoogleTokenClient {
+  requestAccessToken: (options: { prompt: string }) => void;
+}
+
+interface GoogleApi {
+  accounts: {
+    oauth2: {
+      initTokenClient: (config: {
+        client_id: string | null;
+        scope: string;
+        callback: (resp: { error?: unknown }) => void;
+      }) => GoogleTokenClient;
+      revoke: (token: string, done: () => void) => void;
+    };
+  };
+}
+
 declare global {
   interface Window {
-    gapi: any;
-    google: any;
+    gapi: Gapi;
+    google: GoogleApi;
   }
 }
 
@@ -26,7 +69,7 @@ export interface CalendarEvent {
 export function useGoogleCalendarApi() {
   const [gapiInited, setGapiInited] = useState(false);
   const [gisInited, setGisInited] = useState(false);
-  const [tokenClient, setTokenClient] = useState<any>(null);
+  const [tokenClient, setTokenClient] = useState<GoogleTokenClient | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
 
@@ -42,6 +85,7 @@ export function useGoogleCalendarApi() {
     const storedApiKey = localStorage.getItem("gcal_api_key");
     const storedClientId = localStorage.getItem("gcal_client_id");
     
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync with localStorage after mount
     if (storedApiKey) setApiKey(storedApiKey);
     if (storedClientId) setClientId(storedClientId);
   }, []);
@@ -79,7 +123,7 @@ export function useGoogleCalendarApi() {
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: localStorage.getItem("gcal_client_id"),
       scope: SCOPES,
-      callback: (resp: any) => {
+      callback: (resp) => {
         if (resp.error !== undefined) {
           throw (resp);
         }
@@ -134,10 +178,10 @@ export function useGoogleCalendarApi() {
       const items = response.result.items;
       
       // Map Google Events to our format
-      const mappedEvents: CalendarEvent[] = (items || []).map((item: any) => {
+      const mappedEvents: CalendarEvent[] = (items || []).map((item: GoogleCalendarItem) => {
         // Handle full day events vs timed events
-        const start = item.start.dateTime ? new Date(item.start.dateTime) : new Date(item.start.date);
-        const end = item.end.dateTime ? new Date(item.end.dateTime) : new Date(item.end.date);
+        const start = item.start.dateTime ? new Date(item.start.dateTime) : new Date(item.start.date ?? "");
+        const end = item.end.dateTime ? new Date(item.end.dateTime) : new Date(item.end.date ?? "");
         
         return {
           id: item.id,

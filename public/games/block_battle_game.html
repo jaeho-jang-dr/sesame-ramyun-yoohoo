@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>블록 배틀 - 라이벌 대전</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 60%, #228B22 60%, #228B22 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        
+        .game-container { position: relative; width: 100vw; height: 100vh; }
+        
+        .hud {
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            display: flex; justify-content: space-between; z-index: 100;
+        }
+        
+        .player-info {
+            background: rgba(0,0,0,0.7); padding: 8px 12px;
+            border-radius: 10px; color: white; font-size: 14px;
+        }
+        
+        .health-bar {
+            width: 120px; height: 16px; background: #333;
+            border-radius: 8px; overflow: hidden; margin-top: 5px;
+        }
+        
+        .health-fill {
+            height: 100%; background: linear-gradient(to right, #ff0000, #ff4444);
+            transition: width 0.3s;
+        }
+        
+        .health-fill.player { background: linear-gradient(to right, #00ff00, #44ff44); }
+        
+        .disaster-alert {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9); color: white;
+            padding: 15px 30px; border-radius: 15px;
+            font-size: 22px; font-weight: bold;
+            display: none; z-index: 200;
+            animation: shake 0.5s infinite;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            25% { transform: translate(-50%, -50%) rotate(-2deg); }
+            75% { transform: translate(-50%, -50%) rotate(2deg); }
+        }
+        
+        .game-area { position: absolute; bottom: 150px; left: 0; right: 0; top: 120px; }
+        
+        .house { 
+            position: absolute; 
+            cursor: grab; 
+            user-select: none;
+            touch-action: none;
+        }
+        
+        .house:active { cursor: grabbing; }
+        
+        .house-header {
+            padding: 5px 10px;
+            border-radius: 5px 5px 0 0;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+            cursor: grab;
+        }
+        
+        .house.player-owned .house-header { background: #4169E1; }
+        .house.rival-owned .house-header { background: #8B0000; }
+        
+        .house-blocks { display: grid; grid-template-columns: repeat(4, 25px); }
+        
+        .block {
+            width: 25px; height: 25px; border: 1px solid rgba(0,0,0,0.3);
+            transition: all 0.1s; cursor: pointer;
+        }
+        
+        .block:hover { transform: scale(1.1); filter: brightness(1.2); }
+        
+        .block.wood { background: linear-gradient(135deg, #8B4513, #A0522D); }
+        .block.stone { background: linear-gradient(135deg, #696969, #808080); }
+        .block.brick { background: linear-gradient(135deg, #B22222, #CD5C5C); }
+        .block.glass { background: rgba(135, 206, 235, 0.5); }
+        
+        .block.destroyed { animation: explode 0.3s forwards; }
+        
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        
+        .person {
+            position: absolute; bottom: 50px; width: 48px; height: 96px;
+            transition: left 0.1s;
+        }
+        
+        .person-head {
+            width: 32px; height: 32px; margin: 0 auto;
+            position: relative; border-radius: 4px;
+        }
+        
+        .person-face {
+            position: absolute; width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+        }
+        
+        .eyes { display: flex; gap: 8px; margin-bottom: 4px; }
+        .eye { width: 6px; height: 6px; background: #000; border-radius: 1px; }
+        .mouth { width: 10px; height: 3px; background: #000; border-radius: 1px; }
+        
+        .person-body {
+            width: 24px; height: 28px; margin: 2px auto 0;
+            border-radius: 2px; position: relative;
+        }
+        
+        .person-arms {
+            position: absolute; top: 0; left: -10px; right: -10px;
+            height: 24px; display: flex; justify-content: space-between;
+        }
+        
+        .arm { width: 8px; height: 24px; border-radius: 2px; }
+        
+        .person-legs { display: flex; justify-content: center; gap: 2px; margin-top: 2px; }
+        .leg { width: 10px; height: 20px; border-radius: 2px; }
+        
+        #player .person-head { background: #FFCC99; }
+        #player .person-body { background: #4169E1; }
+        #player .arm { background: #4169E1; }
+        #player .leg { background: #1E3A5F; }
+        
+        #rival .person-head { background: #FFCC99; }
+        #rival .person-body { background: #DC143C; }
+        #rival .arm { background: #DC143C; }
+        #rival .leg { background: #8B0000; }
+        
+        .person-name {
+            position: absolute; top: -25px; left: 50%;
+            transform: translateX(-50%); background: rgba(0,0,0,0.7);
+            color: white; padding: 2px 8px; border-radius: 5px;
+            font-size: 12px; white-space: nowrap;
+        }
+        
+        #player .person-name { background: #4169E1; }
+        #rival .person-name { background: #DC143C; }
+        
+        .falling-rock {
+            position: absolute; width: 40px; height: 40px;
+            background: linear-gradient(135deg, #555, #777);
+            border-radius: 5px; z-index: 150;
+            animation: fall linear forwards;
+        }
+        
+        @keyframes fall {
+            0% { top: -50px; }
+            100% { top: 100vh; }
+        }
+        
+        .scoreboard {
+            position: absolute; top: 70px; left: 50%;
+            transform: translateX(-50%); background: rgba(0,0,0,0.8);
+            color: white; padding: 8px 15px; border-radius: 10px;
+            text-align: center; font-size: 13px;
+        }
+        
+        .game-over {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); display: none;
+            justify-content: center; align-items: center;
+            flex-direction: column; z-index: 300;
+        }
+        
+        .game-over h1 { color: white; font-size: 36px; margin-bottom: 20px; text-align: center; padding: 0 20px; }
+        
+        .game-over button {
+            padding: 15px 30px; font-size: 20px; background: #4CAF50;
+            color: white; border: none; border-radius: 10px; cursor: pointer;
+        }
+        
+        .game-over button:hover { background: #45a049; }
+        
+        /* 터치 컨트롤 - 항상 표시! 위로 두칸 올림 */
+        .touch-controls {
+            position: absolute;
+            bottom: 55px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px;
+            z-index: 100;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 4px solid white;
+            font-size: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.9);
+        }
+        
+        .move-left {
+            background: rgba(65, 105, 225, 0.9);
+        }
+        
+        .move-right {
+            background: rgba(65, 105, 225, 0.9);
+        }
+        
+        .attack-btn {
+            background: rgba(220, 20, 60, 0.9);
+            width: 90px;
+            height: 90px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .move-hint {
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            padding: 2px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 0 0 5px 5px;
+        }
+        
+        .attack-effect {
+            position: absolute; font-size: 30px;
+            animation: attackAnim 0.3s forwards; pointer-events: none;
+        }
+        
+        @keyframes attackAnim {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        .damage-number {
+            position: absolute; color: red; font-weight: bold;
+            font-size: 20px; animation: floatUp 1s forwards;
+            pointer-events: none; z-index: 250;
+        }
+        
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+        
+        .walking .leg:first-child { animation: walkLeft 0.3s infinite; }
+        .walking .leg:last-child { animation: walkRight 0.3s infinite; }
+        
+        @keyframes walkLeft {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+        }
+        
+        @keyframes walkRight {
+            0%, 100% { transform: rotate(15deg); }
+            50% { transform: rotate(-15deg); }
+        }
+        
+        .dragging {
+            opacity: 0.8;
+            z-index: 1000 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="hud">
+            <div class="player-info">
+                <div>👤 나</div>
+                <div class="health-bar">
+                    <div class="health-fill player" id="player-health"></div>
+                </div>
+                <div id="player-hp-text">HP: 100/100</div>
+            </div>
+            <div class="player-info">
+                <div>👿 라이벌</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="rival-health"></div>
+                </div>
+                <div id="rival-hp-text">HP: 100/100</div>
+            </div>
+        </div>
+        
+        <div class="scoreboard">
+            <div>내 집: <span id="my-houses">1</span>개 | 라이벌 집: <span id="rival-houses">1</span>개</div>
+        </div>
+        
+        <div class="disaster-alert" id="disaster-alert">⚠️ 재난이 닥쳤습니다! ⚠️</div>
+        
+        <div class="game-area" id="game-area">
+            <div class="person" id="player">
+                <div class="person-name">나</div>
+                <div class="person-head">
+                    <div class="person-face">
+                        <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+                <div class="person-body">
+                    <div class="person-arms"><div class="arm"></div><div class="arm"></div></div>
+                </div>
+                <div class="person-legs"><div class="leg"></div><div class="leg"></div></div>
+            </div>
+            
+            <div class="person" id="rival">
+                <div class="person-name">라이벌</div>
+                <div class="person-head">
+                    <div class="person-face">
+                        <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+                <div class="person-body">
+                    <div class="person-arms"><div class="arm"></div><div class="arm"></div></div>
+                </div>
+                <div class="person-legs"><div class="leg"></div><div class="leg"></div></div>
+            </div>
+        </div>
+        
+        <!-- 터치 컨트롤 - 항상 표시 -->
+        <div class="touch-controls">
+            <div class="control-group">
+                <div class="control-btn move-left" id="btn-left">⬅️</div>
+                <div class="control-btn move-right" id="btn-right">➡️</div>
+            </div>
+            <div class="control-group">
+                <div class="control-btn attack-btn" id="btn-attack">공격!</div>
+            </div>
+        </div>
+        
+        <div class="game-over" id="game-over">
+            <h1 id="game-over-text">게임 오버!</h1>
+            <button onclick="restartGame()">다시 하기</button>
+        </div>
+    </div>
+    
+    <script>
+        var gameState = {
+            playerHP: 100,
+            rivalHP: 100,
+            playerX: 100,
+            rivalX: 500,
+            myHouses: 1,
+            rivalHouses: 1,
+            isGameOver: false,
+            disasterActive: false
+        };
+        
+        var houses = [];
+        var draggedHouse = null;
+        var dragStartX = 0;
+        var dragStartY = 0;
+        var houseStartX = 0;
+        var houseStartY = 0;
+        var moveInterval = null;
+        
+        function init() {
+            createHouse(80, 150, 'rival');
+            createHouse(280, 150, 'player');
+            updateHealthBars();
+            updateScoreboard();
+            document.getElementById('player').style.left = gameState.playerX + 'px';
+            document.getElementById('rival').style.left = gameState.rivalX + 'px';
+            setInterval(autoHeal, 2000);
+            setInterval(triggerDisaster, 8000 + Math.random() * 7000);
+            setInterval(rivalAI, 1000);
+            
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+            document.addEventListener('touchmove', onTouchDragMove, { passive: false });
+            document.addEventListener('touchend', onTouchEnd);
+            document.addEventListener('touchcancel', onTouchEnd);
+            
+            setupTouchControls();
+        }
+        
+        function setupTouchControls() {
+            var btnLeft = document.getElementById('btn-left');
+            var btnRight = document.getElementById('btn-right');
+            var btnAttack = document.getElementById('btn-attack');
+            
+            btnLeft.addEventListener('touchstart', function(e) { 
+                e.preventDefault(); 
+                e.stopPropagation();
+                startMove('left'); 
+            }, { passive: false });
+            btnLeft.addEventListener('touchend', function(e) { 
+                e.preventDefault(); 
+                e.stopPropagation();
+                stopMove(); 
+            }, { passive: false });
+            btnLeft.addEventListener('touchcancel', function(e) { 
+                e.preventDefault(); 
+                stopMove(); 
+            }, { passive: false });
+            btnLeft.addEventListener('mousedown', function(e) { 
+                e.preventDefault(); 
+                startMove('left'); 
+            });
+            btnLeft.addEventListener('mouseup', function(e) { 
+                e.preventDefault(); 
+                stopMove(); 
+            });
+            btnLeft.addEventListener('mouseleave', function(e) { 
+                stopMove(); 
+            });
+            
+            btnRight.addEventListener('touchstart', function(e) { 
+                e.preventDefault(); 
+                e.stopPropagation();
+                startMove('right'); 
+            }, { passive: false });
+            btnRight.addEventListener('touchend', function(e) { 
+                e.preventDefault(); 
+                e.stopPropagation();
+                stopMove(); 
+            }, { passive: false });
+            btnRight.addEventListener('touchcancel', function(e) { 
+                e.preventDefault(); 
+                stopMove(); 
+            }, { passive: false });
+            btnRight.addEventListener('mousedown', function(e) { 
+                e.preventDefault(); 
+                startMove('right'); 
+            });
+            btnRight.addEventListener('mouseup', function(e) { 
+                e.preventDefault(); 
+                stopMove(); 
+            });
+            btnRight.addEventListener('mouseleave', function(e) { 
+                stopMove(); 
+            });
+            
+            btnAttack.addEventListener('touchstart', function(e) { 
+                e.preventDefault(); 
+                e.stopPropagation();
+                attack(); 
+            }, { passive: false });
+            btnAttack.addEventListener('mousedown', function(e) { 
+                e.preventDefault(); 
+                attack(); 
+            });
+        }
+        
+        function startMove(direction) {
+            if (gameState.isGameOver) return;
+            
+            var player = document.getElementById('player');
+            player.classList.add('walking');
+            
+            movePlayer(direction);
+            if (moveInterval) clearInterval(moveInterval);
+            moveInterval = setInterval(function() { movePlayer(direction); }, 100);
+        }
+        
+        function movePlayer(direction) {
+            if (gameState.isGameOver) return;
+            
+            var player = document.getElementById('player');
+            
+            if (direction === 'left') {
+                gameState.playerX = Math.max(50, gameState.playerX - 15);
+            } else {
+                gameState.playerX = Math.min(window.innerWidth - 90, gameState.playerX + 15);
+            }
+            
+            player.style.left = gameState.playerX + 'px';
+        }
+        
+        function stopMove() {
+            var player = document.getElementById('player');
+            player.classList.remove('walking');
+            
+            if (moveInterval) {
+                clearInterval(moveInterval);
+                moveInterval = null;
+            }
+        }
+        
+        function createHouse(x, y, owner) {
+            var gameArea = document.getElementById('game-area');
+            var house = document.createElement('div');
+            house.className = 'house ' + owner + '-owned';
+            house.style.left = x + 'px';
+            house.style.top = y + 'px';
+            house.setAttribute('data-owner', owner);
+            house.setAttribute('data-blocks', '12');
+            
+            var header = document.createElement('div');
+            header.className = 'house-header';
+            header.textContent = owner === 'player' ? '🏠 내 집' : '🏚️ 라이벌';
+            header.addEventListener('mousedown', function(e) { onDragStart(e, house); });
+            header.addEventListener('touchstart', function(e) { onTouchDragStart(e, house); }, { passive: false });
+            house.appendChild(header);
+            
+            var blocksContainer = document.createElement('div');
+            blocksContainer.className = 'house-blocks';
+            var blockTypes = ['wood', 'stone', 'brick', 'glass'];
+            
+            for (var i = 0; i < 12; i++) {
+                var block = document.createElement('div');
+                block.className = 'block ' + blockTypes[Math.floor(Math.random() * blockTypes.length)];
+                (function(b, h) {
+                    b.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        destroyBlock(b, h);
+                    });
+                    b.addEventListener('touchend', function(e) {
+                        e.stopPropagation();
+                        destroyBlock(b, h);
+                    });
+                })(block, house);
+                blocksContainer.appendChild(block);
+            }
+            house.appendChild(blocksContainer);
+            
+            var hint = document.createElement('div');
+            hint.className = 'move-hint';
+            hint.textContent = '↑ 드래그';
+            house.appendChild(hint);
+            
+            gameArea.appendChild(house);
+            houses.push({ element: house, owner: owner, x: x, y: y });
+        }
+        
+        function onDragStart(e, house) {
+            e.preventDefault();
+            draggedHouse = house;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            houseStartX = house.offsetLeft;
+            houseStartY = house.offsetTop;
+            house.classList.add('dragging');
+        }
+        
+        function onTouchDragStart(e, house) {
+            e.preventDefault();
+            var touch = e.touches[0];
+            draggedHouse = house;
+            dragStartX = touch.clientX;
+            dragStartY = touch.clientY;
+            houseStartX = house.offsetLeft;
+            houseStartY = house.offsetTop;
+            house.classList.add('dragging');
+        }
+        
+        function onDragMove(e) {
+            if (!draggedHouse) return;
+            
+            var dx = e.clientX - dragStartX;
+            var dy = e.clientY - dragStartY;
+            
+            var newX = houseStartX + dx;
+            var newY = houseStartY + dy;
+            
+            newX = Math.max(0, Math.min(window.innerWidth - 120, newX));
+            newY = Math.max(0, Math.min(window.innerHeight - 280, newY));
+            
+            draggedHouse.style.left = newX + 'px';
+            draggedHouse.style.top = newY + 'px';
+        }
+        
+        function onTouchDragMove(e) {
+            if (!draggedHouse) return;
+            e.preventDefault();
+            
+            var touch = e.touches[0];
+            var dx = touch.clientX - dragStartX;
+            var dy = touch.clientY - dragStartY;
+            
+            var newX = houseStartX + dx;
+            var newY = houseStartY + dy;
+            
+            newX = Math.max(0, Math.min(window.innerWidth - 120, newX));
+            newY = Math.max(0, Math.min(window.innerHeight - 280, newY));
+            
+            draggedHouse.style.left = newX + 'px';
+            draggedHouse.style.top = newY + 'px';
+        }
+        
+        function onDragEnd() {
+            if (draggedHouse) {
+                draggedHouse.classList.remove('dragging');
+                draggedHouse = null;
+            }
+        }
+        
+        function onTouchEnd(e) {
+            if (draggedHouse) {
+                draggedHouse.classList.remove('dragging');
+                draggedHouse = null;
+            }
+        }
+        
+        function destroyBlock(block, house) {
+            if (gameState.isGameOver || block.classList.contains('destroyed')) return;
+            block.classList.add('destroyed');
+            var blocksLeft = house.querySelectorAll('.block:not(.destroyed)').length;
+            house.setAttribute('data-blocks', blocksLeft);
+            
+            if (blocksLeft === 0) {
+                var oldOwner = house.getAttribute('data-owner');
+                var newOwner = oldOwner === 'player' ? 'rival' : 'player';
+                house.setAttribute('data-owner', newOwner);
+                house.className = 'house ' + newOwner + '-owned';
+                house.querySelector('.house-header').textContent = newOwner === 'player' ? '🏠 내 집' : '🏚️ 라이벌';
+                var blocks = house.querySelectorAll('.block');
+                for (var i = 0; i < blocks.length; i++) {
+                    blocks[i].classList.remove('destroyed');
+                }
+                house.setAttribute('data-blocks', '12');
+                
+                if (newOwner === 'player') { gameState.myHouses++; gameState.rivalHouses--; }
+                else { gameState.myHouses--; gameState.rivalHouses++; }
+                updateScoreboard();
+                
+                if (gameState.rivalHouses <= 0) endGame('🎉 승리! 모든 집을 차지했어!');
+                else if (gameState.myHouses <= 0) endGame('😢 패배... 모든 집을 잃었어');
+            }
+        }
+        
+        function updateHealthBars() {
+            document.getElementById('player-health').style.width = Math.max(0, gameState.playerHP) + '%';
+            document.getElementById('rival-health').style.width = Math.max(0, gameState.rivalHP) + '%';
+            document.getElementById('player-hp-text').textContent = 'HP: ' + Math.max(0, gameState.playerHP) + '/100';
+            document.getElementById('rival-hp-text').textContent = 'HP: ' + Math.max(0, gameState.rivalHP) + '/100';
+        }
+        
+        function updateScoreboard() {
+            document.getElementById('my-houses').textContent = gameState.myHouses;
+            document.getElementById('rival-houses').textContent = gameState.rivalHouses;
+        }
+        
+        function autoHeal() {
+            if (gameState.isGameOver) return;
+            if (gameState.playerHP < 100 && gameState.playerHP > 0) gameState.playerHP = Math.min(100, gameState.playerHP + 5);
+            if (gameState.rivalHP < 100 && gameState.rivalHP > 0) gameState.rivalHP = Math.min(100, gameState.rivalHP + 5);
+            updateHealthBars();
+        }
+        
+        function triggerDisaster() {
+            if (gameState.isGameOver || gameState.disasterActive) return;
+            gameState.disasterActive = true;
+            var alert = document.getElementById('disaster-alert');
+            alert.style.display = 'block';
+            for (var i = 0; i < 5; i++) {
+                (function(idx) {
+                    setTimeout(function() { dropRock(); }, idx * 500);
+                })(i);
+            }
+            setTimeout(function() { 
+                alert.style.display = 'none'; 
+                gameState.disasterActive = false; 
+            }, 3000);
+        }
+        
+        function dropRock() {
+            var rock = document.createElement('div');
+            rock.className = 'falling-rock';
+            rock.style.left = Math.random() * (window.innerWidth - 40) + 'px';
+            rock.style.animationDuration = '2s';
+            document.getElementById('game-area').appendChild(rock);
+            
+            var checkCollision = setInterval(function() {
+                var rockRect = rock.getBoundingClientRect();
+                var playerRect = document.getElementById('player').getBoundingClientRect();
+                var rivalRect = document.getElementById('rival').getBoundingClientRect();
+                
+                if (isColliding(rockRect, playerRect)) {
+                    gameState.playerHP -= 70;
+                    showDamage(playerRect.left, playerRect.top, 70);
+                    updateHealthBars();
+                    checkDeath();
+                    clearInterval(checkCollision);
+                    rock.remove();
+                }
+                
+                if (isColliding(rockRect, rivalRect)) {
+                    gameState.rivalHP -= 70;
+                    showDamage(rivalRect.left, rivalRect.top, 70);
+                    updateHealthBars();
+                    checkDeath();
+                    clearInterval(checkCollision);
+                    rock.remove();
+                }
+            }, 50);
+            
+            setTimeout(function() { 
+                clearInterval(checkCollision); 
+                if (rock.parentNode) rock.remove(); 
+            }, 2000);
+        }
+        
+        function isColliding(rect1, rect2) {
+            return !(rect1.right < rect2.left || rect1.left > rect2.right || rect1.bottom < rect2.top || rect1.top > rect2.bottom);
+        }
+        
+        function showDamage(x, y, amount) {
+            var dmg = document.createElement('div');
+            dmg.className = 'damage-number';
+            dmg.textContent = '-' + amount;
+            dmg.style.left = x + 'px';
+            dmg.style.top = y + 'px';
+            document.body.appendChild(dmg);
+            setTimeout(function() { dmg.remove(); }, 1000);
+        }
+        
+        function checkDeath() {
+            if (gameState.playerHP <= 0) endGame('😢 패배... 죽었어!');
+            else if (gameState.rivalHP <= 0) endGame('🎉 승리! 라이벌을 이겼어!');
+        }
+        
+        function attack() {
+            if (gameState.isGameOver) return;
+            var playerRect = document.getElementById('player').getBoundingClientRect();
+            var rivalRect = document.getElementById('rival').getBoundingClientRect();
+            
+            if (Math.abs(gameState.playerX - gameState.rivalX) < 80) {
+                gameState.rivalHP -= 10;
+                showDamage(rivalRect.left, rivalRect.top, 10);
+                showAttackEffect(gameState.rivalX, playerRect.top);
+                updateHealthBars();
+                checkDeath();
+            }
+        }
+        
+        function showAttackEffect(x, y) {
+            var effect = document.createElement('div');
+            effect.className = 'attack-effect';
+            effect.textContent = '💥';
+            effect.style.left = x + 'px';
+            effect.style.top = y + 'px';
+            document.getElementById('game-area').appendChild(effect);
+            setTimeout(function() { effect.remove(); }, 300);
+        }
+        
+        function rivalAI() {
+            if (gameState.isGameOver) return;
+            var rival = document.getElementById('rival');
+            
+            if (Math.random() > 0.5) {
+                rival.classList.add('walking');
+                if (gameState.rivalX > gameState.playerX) gameState.rivalX -= 25;
+                else gameState.rivalX += 25;
+                gameState.rivalX = Math.max(50, Math.min(window.innerWidth - 90, gameState.rivalX));
+                rival.style.left = gameState.rivalX + 'px';
+                setTimeout(function() { rival.classList.remove('walking'); }, 500);
+            }
+            
+            if (Math.abs(gameState.playerX - gameState.rivalX) < 80 && Math.random() > 0.3) {
+                gameState.playerHP -= 10;
+                var playerRect = document.getElementById('player').getBoundingClientRect();
+                showDamage(playerRect.left, playerRect.top, 10);
+                showAttackEffect(gameState.playerX, playerRect.top);
+                updateHealthBars();
+                checkDeath();
+            }
+            
+            if (Math.random() > 0.7) {
+                for (var i = 0; i < houses.length; i++) {
+                    var h = houses[i];
+                    if (h.element.getAttribute('data-owner') === 'player') {
+                        var blocks = h.element.querySelectorAll('.block:not(.destroyed)');
+                        if (blocks.length > 0) {
+                            var randomBlock = blocks[Math.floor(Math.random() * blocks.length)];
+                            destroyBlock(randomBlock, h.element);
+                        }
+                    }
+                }
+            }
+        }
+        
+        function endGame(message) {
+            gameState.isGameOver = true;
+            document.getElementById('game-over-text').textContent = message;
+            document.getElementById('game-over').style.display = 'flex';
+        }
+        
+        function restartGame() { location.reload(); }
+        
+        document.addEventListener('keydown', function(e) {
+            if (gameState.isGameOver) return;
+            var player = document.getElementById('player');
+            
+            if (e.key === 'ArrowLeft') {
+                player.classList.add('walking');
+                gameState.playerX = Math.max(50, gameState.playerX - 20);
+                player.style.left = gameState.playerX + 'px';
+            } else if (e.key === 'ArrowRight') {
+                player.classList.add('walking');
+                gameState.playerX = Math.min(window.innerWidth - 90, gameState.playerX + 20);
+                player.style.left = gameState.playerX + 'px';
+            } else if (e.key === ' ') {
+                attack();
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('keyup', function(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                document.getElementById('player').classList.remove('walking');
+            }
+        });
+        
+        init();
+    </script>
+</body>
+</html>

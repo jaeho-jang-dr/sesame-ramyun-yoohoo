@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Play, RefreshCw, Trophy } from "lucide-react";
 import { useStore } from "@/store";

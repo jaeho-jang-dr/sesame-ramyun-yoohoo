@@ -162,6 +162,7 @@ export default function AdminPage() {
                     <h1 className="text-2xl font-black text-gray-800">👑 관리자 대시보드</h1>
                 </div>
                 <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary external avatar URL */}
                     <img src={user?.photoURL || ''} className="w-10 h-10 rounded-full border-2 border-purple-500 bg-gray-200" alt="Profile" />
                     <div className="text-right">
                         <p className="font-bold text-gray-800 text-sm">{user?.displayName}님</p>

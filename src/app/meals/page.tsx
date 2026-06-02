@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Search, MapPin, Calendar, Utensils, RotateCcw } from "lucide-react";
+import { ArrowLeft, Search, MapPin, Utensils, RotateCcw } from "lucide-react";
 import { getMeals, searchSchool, SchoolInfo, MealInfo } from "@/lib/neis";
 
 export default function MealsPage() {
@@ -17,6 +17,7 @@ export default function MealsPage() {
     useEffect(() => {
         const saved = localStorage.getItem("mySchool");
         if (saved) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- loading persisted state on mount
             setSchool(JSON.parse(saved));
         }
     }, []);
@@ -24,6 +25,7 @@ export default function MealsPage() {
     // Fetch meals when date or school changes
     useEffect(() => {
         if (school && date) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- start loading before async fetch
             setLoading(true);
             getMeals(school.ATPT_OFCDC_SC_CODE, school.SD_SCHUL_CODE, date)
                 .then(data => setMeal(data))

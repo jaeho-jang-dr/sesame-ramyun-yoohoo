@@ -52,6 +52,7 @@ export function DailyPlanner() {
 
     // Sync input states with fresh config
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- sync local inputs with fresh config
         if (config.apiKey) setApiKeyInput(config.apiKey);
         if (config.clientId) setClientIdInput(config.clientId);
     }, [config.apiKey, config.clientId]);
