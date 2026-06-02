@@ -117,9 +117,30 @@
   claude "globals.css 파일의 .cartoon-card와 .cartoon-btn 클래스에서 border-4 border-gray-900 및 강한 검은색 그림자(shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]) 설정을 모두 지우고, 대신 얇은 테두리(border border-gray-200/50 또는 border border-orange-100/40)와 부드러운 소프트 블러 그림자(shadow-md 또는 shadow-lg)를 적용해 줘. 그리고 page.tsx의 마스코트 말풍선(말풍선 꼬리 border 포함)의 검은 테두리를 모두 걷어내고 부드럽고 예쁘게 둥근 파스텔 테마로 감싸서 글자가 시각적으로 아주 잘 보이게 만들어 줘."
   ```
 
+## 19. firestore.rules 날짜 만료 해결 및 보안 규칙 정밀 세팅
+* **작업내용**: 만료된 개발용 기한 조건(`timestamp.date(2026, 2, 26)`)을 제거하고, `apps`, `guestbook` 및 방명록 댓글 서브컬렉션에 대해 로그인 정보 기반 규칙을 정의하여 쓰기 차단 에러를 해결함.
+* **Claude 명령어**:
+  ```bash
+  claude "firestore.rules 파일을 수정해 줘. 만료된 임시 read/write 규칙을 지우고, apps 컬렉션 규칙은 그대로 두고, guestbook 컬렉션과 그 하위의 comments 서브컬렉션 규칙을 추가해 줘. 규칙 상세: 조회는 누구나 허용(allow read: if true;), 등록은 로그인한 유저만 허용(allow create: if request.auth != null;), 수정 및 삭제는 본인(request.auth.uid == resource.data.authorId) 또는 관리자 이메일('drjang00@gmail.com', '102030hohoho@gmail.com')을 가진 유저만 허용하도록 정의하고, 나머지 컬렉션은 전체 차단해 줘."
+  ```
+
+## 20. 방문자 게시판 고도화 (카드/리스트 뷰 토글, 답글 시스템, 반응자 정보 툴팁 연동)
+* **작업내용**: 방명록 페이지를 고도화하여 뷰 전환 스위치, 답글 서브컬렉션 연동, 반응 수 및 누른 사용자 툴팁 표출, 관리자 편의성 제어 등을 일괄 개발함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/guestbook/page.tsx 파일을 수정해 줘. 1) 카드형/리스트형을 고르는 뷰 토글 버튼 스위치 추가. 2) 각 글 하단에 답글(댓글) 영역과 답글 리스트(Firestore 서브컬렉션 /guestbook/{messageId}/comments 연동) 및 답글 쓰기 영역 구현. 3) 이모지 반응 데이터 구조를 ReactionUser(uid, name)[] 형태로 변경하여 클릭 시 반응 수(숫자)와 해당 반응을 누른 친구들의 실명 목록이 마우스오버 시 툴팁(Speech Bubble 스타일)으로 나타나게 함. 4) 관리자(isAdmin) 계정일 때 개별 글 및 댓글을 즉시 삭제할 수 있는 휴지통 아이콘 제공."
+  ```
+
+## 21. 관리자 대시보드 방명록/댓글 모니터링 연동
+* **작업내용**: 관리자 페이지에서 전체 방명록 글에 연동된 댓글까지 한번에 파악하고 삭제할 수 있도록 백오피스 통제 능력을 업데이트함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/admin/page.tsx 파일을 수정해서 관리자 대시보드 방명록 관리 리스트 내에 작성자가 단 댓글 수나 답글 정보를 일부 볼 수 있는 텍스트를 추가하고, 댓글 서브컬렉션을 포함하여 불량 방명록 글을 삭제하거나 통제할 수 있는 백오피스 기능을 확인 및 보강해 줘."
+  ```
+
 ---
 
-## 19. 검증 (Verification)
+## 22. 검증 (Verification)
 모든 변경 사항이 완료된 후, 린트 오류 및 빌드를 확인하여 최종 검증합니다.
 * **실행 명령어**:
   ```bash
@@ -127,6 +148,7 @@
   npm run build
   npm run test
   ```
+
 
 
 
