@@ -20,12 +20,12 @@ export function MainMenu() {
                 {menuItems.map((item, index) => (
                     <Link href={item.href} key={index} className="group relative">
                         <div className="
-              bg-white p-5 rounded-3xl border-4 border-gray-900 shadow-[5px_5px_0px_rgba(0,0,0,1)]
-              hover:-translate-y-1 hover:scale-105 active:scale-95 transition-transform duration-200
+              bg-white p-5 rounded-3xl border border-orange-100/40 shadow-md
+              hover:-translate-y-1 hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200
               flex flex-col items-center text-center h-full
             ">
                             <div className={`
-                w-12 h-12 rounded-2xl flex items-center justify-center mb-3 border-2 border-gray-900
+                w-12 h-12 rounded-2xl flex items-center justify-center mb-3
                 ${item.colorClass} group-hover:scale-110 group-hover:rotate-6 transition-transform duration-200
               `}>
                                 <item.icon className="w-6 h-6" />

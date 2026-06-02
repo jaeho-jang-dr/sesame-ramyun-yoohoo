@@ -22,7 +22,7 @@ export function QuickLinks() {
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/apps" className="cartoon-card cartoon-pop group bg-purple-100 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="bg-white p-2.5 rounded-xl border-2 border-gray-900">
+                    <div className="bg-white p-2.5 rounded-xl shadow-sm">
                         <LayoutGrid className="w-5 h-5 text-purple-700" />
                     </div>
                     <div className="text-left">
@@ -37,7 +37,7 @@ export function QuickLinks() {
 
             <Link href="/guestbook" className="cartoon-card cartoon-pop group bg-green-100 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="bg-white p-2.5 rounded-xl border-2 border-gray-900">
+                    <div className="bg-white p-2.5 rounded-xl shadow-sm">
                         <Users className="w-5 h-5 text-green-700" />
                     </div>
                     <div className="text-left">

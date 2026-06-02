@@ -140,7 +140,7 @@ export default function GugudanPage() {
                 </div>
 
                 {/* Problem Card */}
-                <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-xl p-8 border-4 border-red-100 text-center mb-6 relative overflow-hidden">
+                <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-xl p-8 border border-red-100 text-center mb-6 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-4 bg-red-400"></div>
 
                     <div className="text-7xl font-black text-gray-800 flex items-center justify-center gap-4 mb-8 font-mono tracking-tighter">
@@ -179,7 +179,7 @@ export default function GugudanPage() {
             {/* 결과 화면: 수학 천재 배지 보상 */}
             {showResult && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white w-full max-w-sm rounded-3xl border-4 border-gray-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 text-center animate-pop-in">
+                    <div className="bg-white w-full max-w-sm rounded-3xl border border-gray-100 shadow-2xl p-8 text-center animate-pop-in">
                         <Image
                             src="/images/badge_math.png"
                             alt="수학 천재 배지"
@@ -191,7 +191,7 @@ export default function GugudanPage() {
                         <h2 className="text-2xl font-black text-gray-900 mb-1">수학 천재 혜완이! 🏆</h2>
                         <p className="text-gray-500 font-bold mb-4">도전 모드 완료!</p>
 
-                        <div className="bg-yellow-100 border-4 border-gray-900 rounded-2xl py-4 mb-6 shadow-cartoon-sm">
+                        <div className="bg-yellow-100 border border-yellow-200 rounded-2xl py-4 mb-6 shadow-sm">
                             <p className="text-sm text-yellow-700 font-bold">최종 점수</p>
                             <p className="text-4xl font-black text-red-500">{finalScore}점</p>
                         </div>
@@ -199,13 +199,13 @@ export default function GugudanPage() {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowResult(false)}
-                                className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl border-4 border-gray-900 shadow-cartoon-sm active:translate-y-0.5 active:shadow-none transition-all"
+                                className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl border border-gray-200 shadow-md hover:shadow-lg active:translate-y-0.5 active:shadow-sm transition-all"
                             >
                                 닫기
                             </button>
                             <button
                                 onClick={() => { setShowResult(false); startChallenge(); }}
-                                className="flex-1 py-3 bg-red-500 text-white font-bold rounded-2xl border-4 border-gray-900 shadow-cartoon-sm active:translate-y-0.5 active:shadow-none transition-all"
+                                className="flex-1 py-3 bg-red-500 text-white font-bold rounded-2xl border border-red-300 shadow-md hover:shadow-lg active:translate-y-0.5 active:shadow-sm transition-all"
                             >
                                 다시 도전! 🔥
                             </button>

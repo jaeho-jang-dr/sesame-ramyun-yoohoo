@@ -170,7 +170,7 @@ export default function DictationPage() {
                 )}
 
                 {mode === 'practice' && showResult && (
-                    <div className="text-center py-10 space-y-8 bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-100">
+                    <div className="text-center py-10 space-y-8 bg-white rounded-3xl shadow-xl p-8 border border-yellow-100">
                         <Trophy className="w-24 h-24 text-yellow-500 mx-auto" />
                         <div>
                             <h2 className="text-3xl font-black text-gray-800 mb-2">연습 끝!</h2>

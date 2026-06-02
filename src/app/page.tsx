@@ -70,7 +70,7 @@ export default function Home() {
       <main className="relative z-10 max-w-5xl mx-auto p-6 space-y-8">
         {/* 마스코트 + 응원 말풍선 */}
         <section className="flex items-center gap-4 animate-pop-in">
-          <div className="shrink-0 w-20 h-20 rounded-full bg-honey border-4 border-gray-900 shadow-cartoon overflow-hidden flex items-center justify-center">
+          <div className="shrink-0 w-20 h-20 rounded-full bg-honey ring-4 ring-white shadow-sweet overflow-hidden flex items-center justify-center">
             <Image
               src="/images/mascot.png"
               alt="참깨라면 마스코트"
@@ -81,12 +81,11 @@ export default function Home() {
             />
           </div>
 
-          {/* Speech Bubble */}
-          <div className="relative bg-cream border-4 border-gray-900 rounded-3xl px-5 py-3 shadow-cartoon-sm">
+          {/* Speech Bubble (부드러운 파스텔 테마) */}
+          <div className="relative bg-cream rounded-3xl px-5 py-3.5 shadow-sweet">
             {/* 말풍선 꼬리 */}
-            <span className="absolute left-[-14px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[10px] border-y-transparent border-r-[16px] border-r-gray-900" />
-            <span className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[7px] border-y-transparent border-r-[12px] border-r-cream" />
-            <p className="text-base md:text-lg font-bold text-gray-800 break-keep">
+            <span className="absolute left-[-9px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[8px] border-y-transparent border-r-[13px] border-r-cream" />
+            <p className="text-base md:text-lg font-bold text-gray-700 break-keep">
               {greeting}
             </p>
           </div>

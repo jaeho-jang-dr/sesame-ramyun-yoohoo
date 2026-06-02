@@ -125,7 +125,7 @@ export default function MealsPage() {
                             />
                         </div>
 
-                        <div className="w-full bg-white rounded-[2rem] shadow-xl p-8 min-h-[400px] border-4 border-orange-100 relative">
+                        <div className="w-full bg-white rounded-[2rem] shadow-xl p-8 min-h-[400px] border border-orange-100 relative">
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-orange-500 text-white p-4 rounded-full shadow-lg">
                                 <Utensils className="w-8 h-8" />
                             </div>
