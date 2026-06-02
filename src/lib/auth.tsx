@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 // import { useRouter } from 'next/navigation'; // Not used
 import { signInWithPopup, onAuthStateChanged, User, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { auth, googleProvider } from '@/lib/firebase';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { auth, db, googleProvider } from '@/lib/firebase';
 import { create } from 'zustand';
 
 interface AuthState {
@@ -28,15 +29,97 @@ export const useAuthStore = create<AuthState>((set) => ({
     setLoading: (loading) => set({ loading }),
 }));
 
+// 로그인 시 /users/{uid}에 프로필을 동기화하고, 차단 여부를 반환한다.
+const syncUserProfile = async (user: User): Promise<boolean> => {
+    const userRef = doc(db, "users", user.uid);
+    const isAdminEmail = user.email ? ADMIN_EMAILS.includes(user.email) : false;
+    const snap = await getDoc(userRef);
+
+    if (!snap.exists()) {
+        // 신규 가입자: 프로필 문서 생성
+        await setDoc(userRef, {
+            uid: user.uid,
+            displayName: user.displayName || "익명",
+            email: user.email || "",
+            photoURL: user.photoURL || "",
+            role: isAdminEmail ? "admin" : "user",
+            isBanned: false,
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+        });
+        return false;
+    }
+
+    const data = snap.data();
+    if (data.isBanned === true) {
+        return true; // 차단된 계정
+    }
+
+    // 기존 가입자: 프로필 변경분 동기화(권한/차단 필드는 건드리지 않음)
+    await setDoc(
+        userRef,
+        {
+            displayName: user.displayName || data.displayName || "익명",
+            email: user.email || data.email || "",
+            photoURL: user.photoURL || data.photoURL || "",
+            lastLogin: serverTimestamp(),
+        },
+        { merge: true }
+    );
+    return false;
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { setUser, setLoading } = useAuthStore();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
-            setLoading(false);
+        let unsubUserDoc: (() => void) | null = null;
+
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            // 이전 사용자 문서 리스너 정리
+            if (unsubUserDoc) {
+                unsubUserDoc();
+                unsubUserDoc = null;
+            }
+
+            if (!user) {
+                setUser(null);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const banned = await syncUserProfile(user);
+                if (banned) {
+                    alert("차단된 계정입니다. 관리자에게 문의하세요.");
+                    await signOut(auth);
+                    setUser(null);
+                    setLoading(false);
+                    return;
+                }
+
+                setUser(user);
+                setLoading(false);
+
+                // 로그인 중 차단되면 실시간으로 감지해 강제 로그아웃
+                unsubUserDoc = onSnapshot(doc(db, "users", user.uid), (d) => {
+                    if (d.exists() && d.data().isBanned === true) {
+                        alert("계정이 차단되어 로그아웃됩니다.");
+                        signOut(auth);
+                    }
+                });
+            } catch (error) {
+                console.error("User profile sync failed", error);
+                // 동기화 실패 시에도 로그인 자체는 유지(앱 사용 가능)
+                setUser(user);
+                setLoading(false);
+            }
         });
-        return () => unsubscribe();
+
+        return () => {
+            if (unsubUserDoc) unsubUserDoc();
+            unsubscribe();
+        };
     }, [setUser, setLoading]);
 
     return <>{children} </>;

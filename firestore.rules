@@ -17,9 +17,18 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == ownerId;
     }
 
-    // 작성자 본인이 만든 문서인지(생성 시 authorId 위조 방지)
+    // 차단된 사용자인지 검사 (users/{uid}.isBanned == true)
+    function isBanned() {
+      return isSignedIn()
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBanned == true;
+    }
+
+    // 작성자 본인이 만든 문서인지(생성 시 authorId 위조 방지) + 차단자 제외
     function creatingAsSelf() {
-      return isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      return isSignedIn()
+             && request.resource.data.authorId == request.auth.uid
+             && !isBanned();
     }
 
     // 반응/답글수 등 비소유 필드만 변경하는 업데이트인지 검사
@@ -30,37 +39,66 @@ service cloud.firestore {
                .hasOnly(['reactions', 'commentCount', 'updatedAt']);
     }
 
+    // ── users: 프로필/권한/차단 관리 ─────────────────
+    match /users/{userId} {
+      // 본인 또는 관리자만 조회 (관리자는 가입자 목록 열람)
+      allow read: if isAdmin() || isOwner(userId);
+
+      // 생성: 본인 명의 + 미차단 상태 + 권한 위조 방지
+      allow create: if isOwner(userId)
+                    && request.resource.data.isBanned == false
+                    && (request.resource.data.role == 'user' || isAdmin());
+
+      // 수정: 본인은 프로필 필드만 / 관리자는 전체(차단·권한 포함)
+      allow update: if (isOwner(userId)
+                         && request.resource.data.diff(resource.data)
+                              .affectedKeys()
+                              .hasOnly(['displayName', 'email', 'photoURL', 'lastLogin']))
+                    || isAdmin();
+
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // ── settings: 마스코트 한마디 등 사이트 설정 ─────
+    match /settings/{docId} {
+      allow read: if true;                       // 홈 화면이 비로그인 상태에서도 읽음
+      allow write: if isAdmin() && !isBanned();  // 관리자만 작성/수정
+    }
+
     // ── apps: 누구나 읽기, 관리자만 쓰기 ─────────────
     match /apps/{appId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin() && !isBanned();
     }
 
     // ── guestbook: 누구나 읽기, 로그인 사용자만 작성 ──
     match /guestbook/{messageId} {
       allow read: if true;
 
-      // 생성: 로그인 + 본인 명의로만
+      // 생성: 로그인 + 본인 명의 + 미차단
       allow create: if creatingAsSelf();
 
-      // 수정: 본인 글 / 관리자 / (타인이 반응·답글수만 변경)
-      allow update: if isOwner(resource.data.authorId)
-                    || isAdmin()
-                    || onlyReactionMetaChanged();
+      // 수정: 차단자 차단 + (본인 글 / 관리자 / 타인이 반응·답글수만 변경)
+      allow update: if !isBanned()
+                    && (isOwner(resource.data.authorId)
+                        || isAdmin()
+                        || onlyReactionMetaChanged());
 
-      // 삭제: 본인 글 또는 관리자 (백오피스 휴지통)
-      allow delete: if isOwner(resource.data.authorId) || isAdmin();
+      // 삭제: 차단자 차단 + 본인 글 또는 관리자 (백오피스 휴지통)
+      allow delete: if !isBanned()
+                    && (isOwner(resource.data.authorId) || isAdmin());
 
       // ── comments(답글) 서브컬렉션 ────────────────
       match /comments/{commentId} {
         allow read: if true;
         allow create: if creatingAsSelf();
-        allow update: if isOwner(resource.data.authorId) || isAdmin();
-        allow delete: if isOwner(resource.data.authorId) || isAdmin();
+        allow update: if !isBanned() && (isOwner(resource.data.authorId) || isAdmin());
+        allow delete: if !isBanned() && (isOwner(resource.data.authorId) || isAdmin());
       }
     }
 
-    // ── 그 외 컬렉션: 기본 거부 (만료된 개발용 규칙 제거) ──
+    // ── 그 외 컬렉션: 기본 거부 ──────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

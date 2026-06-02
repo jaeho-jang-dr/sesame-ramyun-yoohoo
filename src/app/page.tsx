@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useAuthStore, logout } from "@/lib/auth";
 import { DashboardSummary } from "@/components/home/DashboardSummary";
 import { QuickLinks } from "@/components/home/QuickLinks";
@@ -11,17 +13,41 @@ import { MainMenu } from "@/components/home/MainMenu";
 export default function Home() {
   const { user, isAdmin } = useAuthStore();
 
-  // 시간대에 따라 말풍선 메시지를 다르게 노출 (hydration 불일치 방지를 위해 마운트 후 설정)
+  // 말풍선 메시지: 관리자가 등록한 '오늘의 한마디'가 있으면 우선, 없으면 시간대별 인사
   const [greeting, setGreeting] = useState("혜완아, 오늘도 유후~! 🍜");
 
   useEffect(() => {
-    const hour = new Date().getHours();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setGreeting(
-      hour >= 5 && hour < 12
-        ? "혜완아, 좋은 아침! 오늘도 유후~! ☀️"
-        : "혜완아, 오늘 학교 재미있었어? 🍜"
-    );
+    let active = true;
+
+    const loadGreeting = async () => {
+      let mascotMessage = "";
+      try {
+        const snap = await getDoc(doc(db, "settings", "mascot"));
+        if (snap.exists() && typeof snap.data().message === "string") {
+          mascotMessage = snap.data().message.trim();
+        }
+      } catch (error) {
+        console.error("Failed to load mascot message:", error);
+      }
+
+      if (!active) return;
+
+      if (mascotMessage) {
+        setGreeting(mascotMessage);
+      } else {
+        const hour = new Date().getHours();
+        setGreeting(
+          hour >= 5 && hour < 12
+            ? "혜완아, 좋은 아침! 오늘도 유후~! ☀️"
+            : "혜완아, 오늘 학교 재미있었어? 🍜"
+        );
+      }
+    };
+
+    loadGreeting();
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
