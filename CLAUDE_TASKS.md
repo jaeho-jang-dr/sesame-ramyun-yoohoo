@@ -110,9 +110,16 @@
   claude "src/app/books/page.tsx 파일에서 책을 성공적으로 등록했을 때 뜨는 완료 팝업이나 책 목록 리스트의 개별 책 카드 배경 구석에 public/images/badge_reading.png 스티커 이미지(너비 60px 정도)가 칭찬 뱃지 느낌으로 부착되도록 디자인을 고쳐줘."
   ```
 
+## 18. Neobrutalism 스타일을 부드러운 파스텔풍 심플 디자인으로 전면 개편
+* **개선내용**: 만화책풍 입체 디자인(굵은 검은색 테두리 및 강한 검은색 섀도우)이 눈을 피로하게 만들고 글자의 가독성을 해치므로, 테두리를 얇고 은은하게 바꾸고 그림자를 매우 부드러운 파스텔톤 소프트 섀도우로 전면 개편하여 심플하고 예쁜 디자인을 구현함.
+* **Claude 명령어**:
+  ```bash
+  claude "globals.css 파일의 .cartoon-card와 .cartoon-btn 클래스에서 border-4 border-gray-900 및 강한 검은색 그림자(shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]) 설정을 모두 지우고, 대신 얇은 테두리(border border-gray-200/50 또는 border border-orange-100/40)와 부드러운 소프트 블러 그림자(shadow-md 또는 shadow-lg)를 적용해 줘. 그리고 page.tsx의 마스코트 말풍선(말풍선 꼬리 border 포함)의 검은 테두리를 모두 걷어내고 부드럽고 예쁘게 둥근 파스텔 테마로 감싸서 글자가 시각적으로 아주 잘 보이게 만들어 줘."
+  ```
+
 ---
 
-## 17. 검증 (Verification)
+## 19. 검증 (Verification)
 모든 변경 사항이 완료된 후, 린트 오류 및 빌드를 확인하여 최종 검증합니다.
 * **실행 명령어**:
   ```bash
@@ -120,6 +127,7 @@
   npm run build
   npm run test
   ```
+
 
 
 
