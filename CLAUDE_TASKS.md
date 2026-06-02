@@ -173,9 +173,16 @@
   claude "src/app/page.test.tsx 파일에서 firebase/firestore 모킹 객체에 doc과 getDoc 모의 함수를 추가해서 테스트 실행 시 TypeError 경고가 출력되지 않고 통과되도록 수정해 줘."
   ```
 
+## 28. hwkim2571@gmail.com 계정을 관리자 목록에 추가
+* **작업내용**: `src/lib/auth.tsx`와 `firestore.rules`의 관리자 이메일 목록에 `'hwkim2571@gmail.com'`을 추가함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/lib/auth.tsx 파일의 ADMIN_EMAILS 목록에 'hwkim2571@gmail.com'을 추가해 주고, firestore.rules 파일의 isAdmin() 함수 내 관리자 이메일 배열에도 'hwkim2571@gmail.com'을 추가해 줘."
+  ```
+
 ---
 
-## 28. 검증 (Verification)
+## 29. 검증 (Verification)
 모든 변경 사항이 완료된 후, 린트 오류 및 빌드를 확인하여 최종 검증합니다.
 * **실행 명령어**:
   ```bash
@@ -183,6 +190,7 @@
   npm run build
   npm run test
   ```
+
 
 
 
