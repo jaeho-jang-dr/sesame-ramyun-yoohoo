@@ -138,9 +138,37 @@
   claude "src/app/admin/page.tsx 파일을 수정해서 관리자 대시보드 방명록 관리 리스트 내에 작성자가 단 댓글 수나 답글 정보를 일부 볼 수 있는 텍스트를 추가하고, 댓글 서브컬렉션을 포함하여 불량 방명록 글을 삭제하거나 통제할 수 있는 백오피스 기능을 확인 및 보강해 줘."
   ```
 
+## 22. AuthProvider 사용자 로그인 정보 Firestore 동기화 및 차단 세션 처리
+* **작업내용**: `src/lib/auth.tsx`의 `AuthProvider` 내 `onAuthStateChanged`에서 로그인 감지 시 `/users/{uid}` 경로에 사용자 프로필(uid, email, displayName, photoURL, lastLogin, role, isBanned)을 병합 저장하고, 차단된 사용자(`isBanned === true`)로 조회될 경우 즉시 로그아웃(signOut)시키도록 보강함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/lib/auth.tsx 파일을 수정해 줘. AuthProvider 내의 useEffect 마운트 시 onAuthStateChanged 콜백 함수 안에, 사용자가 로그인했을 때 Firestore의 /users/{uid} 문서에 사용자 정보(uid, email, displayName, photoURL, lastLogin: serverTimestamp(), role: admin여부, isBanned: false(기본값))를 setDoc(..., { merge: true })로 병합 동기화하는 비동기 함수를 호출하도록 구현해 줘. 그리고 동기화 시 이미 차단된 유저(isBanned === true)로 조회되면 즉시 signOut(auth)을 호출해 세션을 끊고 경고창을 띄우는 로직도 추가해 줘. 임포트 누락도 확인해 줘."
+  ```
+
+## 23. firestore.rules 차단 유저 접근 금지 및 신규 컬렉션 규칙 추가
+* **작업내용**: 차단된 유저의 접근을 전면 금지하는 규칙과 `/users`, `/settings` 컬렉션 보안 설정을 `firestore.rules`에 정밀 반영함.
+* **Claude 명령어**:
+  ```bash
+  claude "firestore.rules 파일을 수정해 줘. 1) isBanned() 공통 헬퍼 함수 추가 (로그인 상태에서 users 컬렉션의 해당 uid 문서의 isBanned 필드가 true인지 확인). 2) 모든 컬렉션(apps, guestbook, comments)의 쓰기/수정 권한에 isBanned가 아닐 때만 허용하도록 if 조건 추가. 3) users 컬렉션(/users/{userId}) 보안 규칙 추가: 누구나 로그인하면 본인 프로필 읽기/쓰기 허용(isBanned 아닐 때), 관리자는 수정 허용. 4) settings 컬렉션(/settings/{docId}) 보안 규칙 추가: 조회는 누구나 허용(isBanned 아닐 때), 작성/수정/삭제는 관리자(isAdmin)만 허용."
+  ```
+
+## 24. 관리자 대시보드(admin/page.tsx) 사용자 관리 및 오늘의 한마디 설정 패널 추가
+* **작업내용**: 관리자 페이지에 사용자 목록(조회/차단) 탭과 오늘의 한마디 실시간 설정 폼을 추가하고, 방명록 필드명 동기화 및 `formatDate` 예외 방어 처리를 수행함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/admin/page.tsx 파일을 수정해 줘. 1) 화면 레이아웃에 사용자 관리 탭을 추가해서 Firestore /users 컬렉션의 모든 유저 목록(이름, 이메일, 마지막 로그인 시간, 역할, 차단 상태)을 실시간(onSnapshot) 조회하게 하고, 차단/차단해제 버튼 및 관리자 권한 지정 버튼 연동. 2) 상단에 오늘의 한마디 입력 폼을 신설해 Firestore /settings/mascot 문서의 message 필드로 실시간 조회 및 저장(setDoc) 연동. 3) 방명록 리스트에서 이름과 메시지가 깨지지 않게 필드명을 authorName, message로 바꾸고, formatDate 함수에 toDate() 호출 예외 안전 검증(typeof timestamp.toDate === 'function')을 추가해 줘."
+  ```
+
+## 25. 메인 대시보드(page.tsx) 실시간 오늘의 한마디 연동
+* **작업내용**: 메인 홈 화면 진입 시 관리자가 입력한 '오늘의 한마디'를 Firestore로부터 읽어와 마스코트 말풍선에 연동함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/page.tsx 파일을 수정해서, 마운트 시 Firestore의 /settings/mascot 문서를 가져와(getDoc) 만약 설정된 message가 존재하면 해당 텍스트를 말풍선(greeting 상태)에 적용하고, 없을 때만 기존 시간대별 메시지를 기본값으로 표시하도록 렌더링 연동을 완료해 줘."
+  ```
+
 ---
 
-## 22. 검증 (Verification)
+## 26. 검증 (Verification)
 모든 변경 사항이 완료된 후, 린트 오류 및 빌드를 확인하여 최종 검증합니다.
 * **실행 명령어**:
   ```bash
@@ -148,6 +176,7 @@
   npm run build
   npm run test
   ```
+
 
 
 
