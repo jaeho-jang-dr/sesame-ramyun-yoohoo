@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import { useAuthStore, logout } from "@/lib/auth";
 import { DashboardSummary } from "@/components/home/DashboardSummary";
 import { QuickLinks } from "@/components/home/QuickLinks";
@@ -9,8 +11,21 @@ import { MainMenu } from "@/components/home/MainMenu";
 export default function Home() {
   const { user, isAdmin } = useAuthStore();
 
+  // 시간대에 따라 말풍선 메시지를 다르게 노출 (hydration 불일치 방지를 위해 마운트 후 설정)
+  const [greeting, setGreeting] = useState("혜완아, 오늘도 유후~! 🍜");
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGreeting(
+      hour >= 5 && hour < 12
+        ? "혜완아, 좋은 아침! 오늘도 유후~! ☀️"
+        : "혜완아, 오늘 학교 재미있었어? 🍜"
+    );
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#FDFBF7] font-sans selection:bg-purple-100 text-gray-800">
+    <div className="min-h-screen bg-[#FDFBF7] selection:bg-purple-100 text-gray-800">
       {/* Background decoration */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40"
         style={{
@@ -53,6 +68,30 @@ export default function Home() {
       </header>
 
       <main className="relative z-10 max-w-5xl mx-auto p-6 space-y-8">
+        {/* 마스코트 + 응원 말풍선 */}
+        <section className="flex items-center gap-4 animate-pop-in">
+          <div className="shrink-0 w-20 h-20 rounded-full bg-honey border-4 border-gray-900 shadow-cartoon overflow-hidden flex items-center justify-center">
+            <Image
+              src="/images/mascot.png"
+              alt="참깨라면 마스코트"
+              width={80}
+              height={80}
+              className="w-full h-full object-cover"
+              priority
+            />
+          </div>
+
+          {/* Speech Bubble */}
+          <div className="relative bg-cream border-4 border-gray-900 rounded-3xl px-5 py-3 shadow-cartoon-sm">
+            {/* 말풍선 꼬리 */}
+            <span className="absolute left-[-14px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[10px] border-y-transparent border-r-[16px] border-r-gray-900" />
+            <span className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[7px] border-y-transparent border-r-[12px] border-r-cream" />
+            <p className="text-base md:text-lg font-bold text-gray-800 break-keep">
+              {greeting}
+            </p>
+          </div>
+        </section>
+
         <DashboardSummary />
         <QuickLinks />
         <MainMenu />

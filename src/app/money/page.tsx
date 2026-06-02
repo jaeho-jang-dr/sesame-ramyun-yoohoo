@@ -27,7 +27,7 @@ export default function MoneyPage() {
     };
 
     return (
-        <div className="min-h-screen bg-indigo-50 font-sans">
+        <div className="min-h-screen bg-indigo-50">
             <header className="bg-white p-4 shadow-sm sticky top-0 z-10 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link href="/" className="p-2 hover:bg-gray-100 rounded-full">

@@ -149,7 +149,7 @@ export default function AdminPage() {
     if (loading || !isAdmin) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="w-8 h-8 animate-spin text-purple-500" /></div>;
 
     return (
-        <div className="min-h-screen bg-gray-100 p-6 font-sans">
+        <div className="min-h-screen bg-gray-100 p-6">
             <header className="max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-4 w-full md:w-auto">
                     <Link

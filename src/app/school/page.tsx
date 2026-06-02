@@ -10,7 +10,7 @@ export default function TimetablePage() {
     const [activeTab, setActiveTab] = useState<'timetble' | 'planner'>('timetble');
 
     return (
-        <div className="min-h-screen bg-[#FFF7ED] font-sans">
+        <div className="min-h-screen bg-[#FFF7ED]">
             {/* Header */}
             <header className="bg-white p-4 shadow-sm sticky top-0 z-10 flex items-center justify-between">
                 <Link href="/" className="p-2 hover:bg-gray-100 rounded-full">

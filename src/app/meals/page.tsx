@@ -59,7 +59,7 @@ export default function MealsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-orange-50 font-sans pb-20">
+        <div className="min-h-screen bg-orange-50 pb-20">
             <header className="bg-white p-4 shadow-sm sticky top-0 z-10 flex items-center justify-between">
                 <Link href="/" className="p-2 hover:bg-gray-100 rounded-full">
                     <ArrowLeft className="w-6 h-6 text-gray-700" />

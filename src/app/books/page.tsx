@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, Plus, Star, BookOpen } from "lucide-react";
 import { useStore } from "@/store";
 
@@ -31,7 +32,7 @@ export default function BooksPage() {
     };
 
     return (
-        <div className="min-h-screen bg-pink-50 font-sans">
+        <div className="min-h-screen bg-pink-50">
             <header className="bg-white p-4 shadow-sm sticky top-0 z-10 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link href="/" className="p-2 hover:bg-gray-100 rounded-full">
@@ -111,8 +112,16 @@ export default function BooksPage() {
                         </div>
                     ) : (
                         [...books].reverse().map((book) => (
-                            <div key={book.id} className="bg-white p-5 rounded-2xl shadow-sm border border-transparent hover:border-pink-200 transition-all flex flex-col gap-2">
-                                <div className="flex items-start justify-between">
+                            <div key={book.id} className="relative bg-white p-5 rounded-2xl shadow-sm border border-transparent hover:border-pink-200 transition-all flex flex-col gap-2 overflow-hidden">
+                                {/* 독서 요정 칭찬 배지 스티커 */}
+                                <Image
+                                    src="/images/badge_reading.png"
+                                    alt="독서 요정 배지"
+                                    width={60}
+                                    height={60}
+                                    className="absolute -bottom-2 -right-2 opacity-90 rotate-12 drop-shadow-md pointer-events-none select-none"
+                                />
+                                <div className="flex items-start justify-between pr-12">
                                     <h3 className="text-lg font-bold text-gray-800 break-keep leading-tight">{book.title}</h3>
                                     <div className="flex shrink-0">
                                         {[...Array(book.rating)].map((_, i) => (
@@ -125,7 +134,7 @@ export default function BooksPage() {
                                         {book.memo}
                                     </p>
                                 )}
-                                <p className="text-xs text-gray-400 text-right mt-1">{book.date}</p>
+                                <p className="text-xs text-gray-400 text-right mt-1 pr-12">{book.date}</p>
                             </div>
                         ))
                     )}

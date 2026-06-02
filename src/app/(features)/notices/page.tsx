@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default function NoticesPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-300 via-pink-300 to-purple-300 font-sans p-6">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-300 via-pink-300 to-purple-300 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header with Back Button */}
         <header className="flex items-center mb-8">

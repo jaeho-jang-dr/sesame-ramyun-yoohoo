@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, Trophy } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useStore } from "@/store";
@@ -19,6 +20,10 @@ export default function GugudanPage() {
     const [timeLeft, setTimeLeft] = useState(60);
     const [isActive, setIsActive] = useState(false);
 
+    // 결과 화면(수학 배지) 상태
+    const [showResult, setShowResult] = useState(false);
+    const [finalScore, setFinalScore] = useState(0);
+
     useEffect(() => {
         if (!isActive) return;
         const interval = setInterval(() => {
@@ -27,7 +32,15 @@ export default function GugudanPage() {
                     clearInterval(interval);
                     setIsActive(false);
                     setMode('practice');
-                    alert(`시간 종료! ⏰ 최종 점수: ${combo}점`);
+                    // 시간 종료 → 결과 화면 노출 + 폭죽 효과
+                    setFinalScore(combo);
+                    setShowResult(true);
+                    confetti({
+                        particleCount: 160,
+                        spread: 100,
+                        origin: { y: 0.6 },
+                        colors: ['#EF4444', '#F59E0B', '#FACC15', '#EC4899']
+                    });
                     return 0;
                 }
                 return t - 1;
@@ -87,7 +100,7 @@ export default function GugudanPage() {
     };
 
     return (
-        <div className="min-h-screen bg-red-50 font-sans">
+        <div className="min-h-screen bg-red-50">
             <header className="bg-white p-4 shadow-sm sticky top-0 z-10 flex items-center gap-4">
                 <Link href="/" className="p-2 hover:bg-gray-100 rounded-full">
                     <ArrowLeft className="w-6 h-6 text-gray-700" />
@@ -162,6 +175,44 @@ export default function GugudanPage() {
                 </button>
 
             </main>
+
+            {/* 결과 화면: 수학 천재 배지 보상 */}
+            {showResult && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-sm rounded-3xl border-4 border-gray-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 text-center animate-pop-in">
+                        <Image
+                            src="/images/badge_math.png"
+                            alt="수학 천재 배지"
+                            width={100}
+                            height={100}
+                            className="mx-auto mb-4 drop-shadow-lg"
+                            priority
+                        />
+                        <h2 className="text-2xl font-black text-gray-900 mb-1">수학 천재 혜완이! 🏆</h2>
+                        <p className="text-gray-500 font-bold mb-4">도전 모드 완료!</p>
+
+                        <div className="bg-yellow-100 border-4 border-gray-900 rounded-2xl py-4 mb-6 shadow-cartoon-sm">
+                            <p className="text-sm text-yellow-700 font-bold">최종 점수</p>
+                            <p className="text-4xl font-black text-red-500">{finalScore}점</p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowResult(false)}
+                                className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl border-4 border-gray-900 shadow-cartoon-sm active:translate-y-0.5 active:shadow-none transition-all"
+                            >
+                                닫기
+                            </button>
+                            <button
+                                onClick={() => { setShowResult(false); startChallenge(); }}
+                                className="flex-1 py-3 bg-red-500 text-white font-bold rounded-2xl border-4 border-gray-900 shadow-cartoon-sm active:translate-y-0.5 active:shadow-none transition-all"
+                            >
+                                다시 도전! 🔥
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

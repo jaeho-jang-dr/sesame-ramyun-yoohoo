@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Jua } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 
-const inter = Inter({ subsets: ["latin"] });
+const jua = Jua({ subsets: ["latin"], weight: "400" });
 
 export const metadata: Metadata = {
   title: "참깨라면 유후~",
@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={inter.className}>
+      <body className={jua.className}>
         <AuthProvider>
           {children}
         </AuthProvider>
