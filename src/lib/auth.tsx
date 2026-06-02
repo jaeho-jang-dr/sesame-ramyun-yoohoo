@@ -16,7 +16,7 @@ interface AuthState {
     setLoading: (loading: boolean) => void;
 }
 
-const ADMIN_EMAILS = ['drjang00@gmail.com', '102030hohoho@gmail.com'];
+const ADMIN_EMAILS = ['drjang00@gmail.com', '102030hohoho@gmail.com', 'hwkim2571@gmail.com'];
 
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
