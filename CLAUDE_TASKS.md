@@ -68,9 +68,51 @@
   claude "src/app/apps/page.tsx 파일에서 실행하기 버튼(a 태그) 부분을 수정해서, 만약 app.link가 '/'로 시작하는 내부 경로이면 Next.js의 Link 컴포넌트를 사용하여 현재 창에서 바로 이동하도록 하고, 외부 링크(http로 시작하는 등)인 경우에만 기존처럼 target='_blank'를 가진 a 태그로 렌더링하도록 조건부 분기 코드를 구현해 줘. Next.js Link 컴포넌트 임포트도 확인해 줘."
   ```
 
+## 11. Google Fonts Jua(주아) 폰트 적용
+* **작업내용**: 초등학교 2학년 혜완이가 읽기 좋게 귀엽고 둥글둥글한 구글 폰트 `Jua`를 전체 웹페이지의 기본 폰트로 로드하여 설정함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/layout.tsx 파일에서 next/font/google의 Inter 폰트를 제거하고 대신 Jua 폰트(subsets: ['latin'], weight: '400')를 로드해서 body 태그의 className으로 적용해 줘."
+  ```
+
+## 12. globals.css에 Neobrutalism 만화풍 스타일 및 호버 효과 정의
+* **작업내용**: 굵은 테두리와 강렬한 하드 섀도우를 주는 만화책 느낌의 디자인 클래스(`cartoon-card`, `cartoon-btn`) 및 Framer Motion 또는 CSS 호버 시 적용할 통통 튀는 애니메이션 효과를 정의함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/globals.css 파일에 Neobrutalism 만화풍 카드 및 버튼 공통 스타일을 정의해 줘. .cartoon-card는 'border-4 border-gray-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-3xl transition-transform hover:-translate-y-1', .cartoon-btn은 'border-4 border-gray-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-2xl active:translate-y-0.5 active:shadow-none' 속성을 갖도록 하고, 혜완이를 위해 따뜻하고 달콤한 느낌의 색상 유틸리티나 부드러운 쉐도우를 추가 정의해 줘."
+  ```
+
+## 13. 메인 대시보드(page.tsx)에 참깨라면 마스코트 캐릭터 및 응원 말풍선 구현
+* **작업내용**: 메인 홈 화면 최상단에 미리 준비된 마스코트 이미지(`/images/mascot.png`)를 배치하고, 혜완이에게 말을 거는 아기자기한 말풍선 메시지 영역을 구현함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/page.tsx 파일의 메인 대시보드 최상단(Header 아래, DashboardSummary 위)에 public/images/mascot.png 마스코트 이미지를 크기 80x80 정도로 둥글게 배치해 줘. 그리고 그 옆에 혜완이를 환영하고 응원하는 말풍선(Speech Bubble) UI를 넣어줘. 말풍선 텍스트는 시간대에 따라 다르게 노출되도록 해 줘 (아침: '혜완아, 좋은 아침! 오늘도 유후~! ☀️', 오후/저녁: '혜완아, 오늘 학교 재미있었어? 🍜'). 말풍선 배경은 노란색이나 크림색 둥근 디자인으로 예쁘게 만들어줘."
+  ```
+
+## 14. 메인 화면 카드 및 바로가기 메뉴 디자인 만화풍으로 개편
+* **작업내용**: `DashboardSummary`, `QuickLinks`, `MainMenu` 컴포넌트들을 새로 정의한 만화책 스타일(`.cartoon-card`)과 통통 튀는 애니메이션으로 리뉴얼함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/components/home/DashboardSummary.tsx, src/components/home/QuickLinks.tsx, src/components/home/MainMenu.tsx 세 파일의 카드 및 바로가기 링크 버튼의 클래스명을 수정해서 globals.css에 정의한 .cartoon-card 또는 Neobrutalism 만화풍 테두리(border-4 border-gray-900)와 그림자(shadow-[5px_5px_0px_rgba(0,0,0,1)])를 적용해 주고, 둥글기 강도를 rounded-2xl 또는 rounded-3xl로 크게 주고 마우스오버 시 통통 튀는 스케일 업 애니메이션 효과를 부여해 줘."
+  ```
+
+## 15. 구구단 게임에 참 잘했어요 수학 배지 보상 연동
+* **작업내용**: 구구단 문제를 모두 완료하거나 높은 점수를 얻었을 때 결과 화면에 수학 배지(`/images/badge_math.png`)를 폭죽 효과와 함께 노출함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/gugudan/page.tsx 파일에서 시간 종료 시 또는 높은 점수를 달성해 연습 결과를 보여주는 화면에 public/images/badge_math.png 이미지(너비 100px 정도)를 '수학 천재 혜완이! 🏆'라는 텍스트 칭찬 카드와 함께 예쁘게 배치하고, 애니메이션으로 부드럽게 나타나도록 연동해 줘."
+  ```
+
+## 16. 독서 기록 페이지에 독서 요정 배지 스티커 연동
+* **작업내용**: 독서 기록을 작성하고 저장된 목록을 볼 때, 카드 옆에 귀여운 독서 스티커 배지(`/images/badge_reading.png`)를 부착하여 성취감을 부여함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/books/page.tsx 파일에서 책을 성공적으로 등록했을 때 뜨는 완료 팝업이나 책 목록 리스트의 개별 책 카드 배경 구석에 public/images/badge_reading.png 스티커 이미지(너비 60px 정도)가 칭찬 뱃지 느낌으로 부착되도록 디자인을 고쳐줘."
+  ```
+
 ---
 
-## 10. 검증 (Verification)
+## 17. 검증 (Verification)
 모든 변경 사항이 완료된 후, 린트 오류 및 빌드를 확인하여 최종 검증합니다.
 * **실행 명령어**:
   ```bash
@@ -78,5 +120,6 @@
   npm run build
   npm run test
   ```
+
 
 
