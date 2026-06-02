@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Home, Trash2, MessageCircle, LayoutGrid, Loader2, Eye, EyeOff, Pencil, X, Save } from 'lucide-react';
-import { collection, onSnapshot, orderBy, query, deleteDoc, updateDoc, doc, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, deleteDoc, updateDoc, doc, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface GuestBookMessage {
     id: string;
-    content: string;
-    userId: string;
-    userName: string;
+    message: string;
+    authorId: string;
+    authorName: string;
+    authorEmoji?: string;
+    commentCount?: number;
     createdAt: Timestamp | null;
 }
 
@@ -78,9 +80,12 @@ export default function AdminPage() {
     }, [isAdmin]);
 
     const handleDeleteMessage = async (id: string) => {
-        if (!confirm("이 방명록 글을 삭제하시겠습니까?")) return;
+        if (!confirm("이 방명록 글을 삭제하시겠습니까? (달린 답글도 함께 삭제됩니다)")) return;
         setIsDeleting(id);
         try {
+            // 백오피스 삭제: 답글 서브컬렉션 먼저 정리 후 본문 삭제
+            const commentsSnap = await getDocs(collection(db, "guestbook", id, "comments"));
+            await Promise.all(commentsSnap.docs.map((c) => deleteDoc(c.ref)));
             await deleteDoc(doc(db, "guestbook", id));
         } catch (error) {
             console.error("Delete failed", error);
@@ -191,20 +196,25 @@ export default function AdminPage() {
                             messages.map((msg) => (
                                 <div key={msg.id} className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-gray-300 transition-colors group relative">
                                     <div className="flex justify-between items-start mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-sm text-gray-800">{msg.userName}</span>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-base">{msg.authorEmoji || "😊"}</span>
+                                            <span className="font-bold text-sm text-gray-800">{msg.authorName}</span>
                                             <span className="text-xs text-gray-400">{formatDate(msg.createdAt)}</span>
+                                            <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                                                <MessageCircle className="w-3 h-3" />
+                                                답글 {msg.commentCount ?? 0}
+                                            </span>
                                         </div>
                                         <button
                                             onClick={() => handleDeleteMessage(msg.id)}
                                             className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                             disabled={isDeleting === msg.id}
-                                            title="삭제하기"
+                                            title="글 삭제 (답글 포함)"
                                         >
                                             {isDeleting === msg.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                         </button>
                                     </div>
-                                    <p className="text-gray-600 text-sm break-keep leading-relaxed">{msg.content}</p>
+                                    <p className="text-gray-600 text-sm break-keep leading-relaxed">{msg.message}</p>
                                 </div>
                             ))
                         )}

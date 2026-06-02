@@ -2,23 +2,67 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Explicit rule for 'apps' collection
-    match /apps/{appId} {
-      // Anyone can read apps
-      allow read: if true;
-      
-      // Only admins can write (create/update/delete)
-      // Checks if user is authenticated and is one of the admin emails
-      allow write: if request.auth != null && 
-                   (request.auth.token.email == 'drjang00@gmail.com' || 
-                    request.auth.token.email == '102030hohoho@gmail.com');
+
+    // ── 공통 헬퍼 함수 ──────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Default rule for other collections (Development Mode)
-    // Allows anyone to read/write until Feb 26, 2026.
+    function isAdmin() {
+      return isSignedIn() &&
+             request.auth.token.email in ['drjang00@gmail.com', '102030hohoho@gmail.com'];
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    // 작성자 본인이 만든 문서인지(생성 시 authorId 위조 방지)
+    function creatingAsSelf() {
+      return isSignedIn() && request.resource.data.authorId == request.auth.uid;
+    }
+
+    // 반응/답글수 등 비소유 필드만 변경하는 업데이트인지 검사
+    // (다른 사람 글에 이모지 반응을 달거나 답글수를 갱신할 때 허용)
+    function onlyReactionMetaChanged() {
+      return request.resource.data.diff(resource.data)
+               .affectedKeys()
+               .hasOnly(['reactions', 'commentCount', 'updatedAt']);
+    }
+
+    // ── apps: 누구나 읽기, 관리자만 쓰기 ─────────────
+    match /apps/{appId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ── guestbook: 누구나 읽기, 로그인 사용자만 작성 ──
+    match /guestbook/{messageId} {
+      allow read: if true;
+
+      // 생성: 로그인 + 본인 명의로만
+      allow create: if creatingAsSelf();
+
+      // 수정: 본인 글 / 관리자 / (타인이 반응·답글수만 변경)
+      allow update: if isOwner(resource.data.authorId)
+                    || isAdmin()
+                    || onlyReactionMetaChanged();
+
+      // 삭제: 본인 글 또는 관리자 (백오피스 휴지통)
+      allow delete: if isOwner(resource.data.authorId) || isAdmin();
+
+      // ── comments(답글) 서브컬렉션 ────────────────
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if creatingAsSelf();
+        allow update: if isOwner(resource.data.authorId) || isAdmin();
+        allow delete: if isOwner(resource.data.authorId) || isAdmin();
+      }
+    }
+
+    // ── 그 외 컬렉션: 기본 거부 (만료된 개발용 규칙 제거) ──
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 2, 26);
+      allow read, write: if false;
     }
   }
 }
