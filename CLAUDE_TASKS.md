@@ -166,9 +166,16 @@
   claude "src/app/page.tsx 파일을 수정해서, 마운트 시 Firestore의 /settings/mascot 문서를 가져와(getDoc) 만약 설정된 message가 존재하면 해당 텍스트를 말풍선(greeting 상태)에 적용하고, 없을 때만 기존 시간대별 메시지를 기본값으로 표시하도록 렌더링 연동을 완료해 줘."
   ```
 
+## 27. page.test.tsx 내 Firebase Firestore Mock 에러 해결
+* **오류내용**: `page.tsx`에 Firestore `doc` 및 `getDoc`이 도입되면서, `page.test.tsx` 테스트 파일에서 해당 함수들이 모킹되지 않아 `TypeError: (0 , _firestore.doc) is not a function` 경고가 발생함.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/page.test.tsx 파일에서 firebase/firestore 모킹 객체에 doc과 getDoc 모의 함수를 추가해서 테스트 실행 시 TypeError 경고가 출력되지 않고 통과되도록 수정해 줘."
+  ```
+
 ---
 
-## 26. 검증 (Verification)
+## 28. 검증 (Verification)
 모든 변경 사항이 완료된 후, 린트 오류 및 빌드를 확인하여 최종 검증합니다.
 * **실행 명령어**:
   ```bash
@@ -176,6 +183,7 @@
   npm run build
   npm run test
   ```
+
 
 
 
