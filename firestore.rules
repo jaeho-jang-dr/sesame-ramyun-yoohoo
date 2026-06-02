@@ -94,7 +94,12 @@ service cloud.firestore {
         allow read: if true;
         allow create: if creatingAsSelf();
         allow update: if !isBanned() && (isOwner(resource.data.authorId) || isAdmin());
-        allow delete: if !isBanned() && (isOwner(resource.data.authorId) || isAdmin());
+        // 삭제: 차단자 차단 + (댓글 작성자 / 관리자 / 방명록 글 소유자)
+        // 방명록 글 소유자가 글을 지울 때 하위 댓글도 함께 삭제되도록 허용
+        allow delete: if !isBanned()
+                      && (isOwner(resource.data.authorId)
+                          || isAdmin()
+                          || request.auth.uid == get(/databases/$(database)/documents/guestbook/$(messageId)).data.authorId);
       }
     }
 
