@@ -20,7 +20,7 @@ interface AppData {
     id: string;
     name: string;
     description: string;
-    url: string;
+    link: string;
     iconKey?: string;
     themeKey?: string;
     isVisible?: boolean; // New field for visibility
@@ -129,7 +129,7 @@ export default function AdminPage() {
             await updateDoc(doc(db, "apps", editingApp.id), {
                 name: editForm.name,
                 description: editForm.description,
-                url: editForm.url,
+                link: editForm.link,
             });
             setEditingApp(null);
             setEditForm({});
@@ -317,13 +317,13 @@ export default function AdminPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">URL 주소</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">링크 주소</label>
                                 <input
-                                    type="url"
-                                    value={editForm.url || ''}
-                                    onChange={e => setEditForm({ ...editForm, url: e.target.value })}
+                                    type="text"
+                                    value={editForm.link || ''}
+                                    onChange={e => setEditForm({ ...editForm, link: e.target.value })}
                                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow"
-                                    placeholder="https://"
+                                    placeholder="https:// 또는 /games/파일명.html"
                                 />
                             </div>
 

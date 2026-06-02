@@ -54,14 +54,29 @@
   claude "src/app/globals.css 파일에 Tailwind v4 theme 정의(@theme { --color-sesame-gold: #F59E0B; --color-yoohoo-pink: #EC4899; })를 추가해서 테마 색상을 정의해 주고, tailwind.config.ts 파일에서 존재하지 않는 ../design-system/tailwind.preset.js presets 임포트를 지워줘."
   ```
 
+## 8. Admin Dashboard와 Apps Page 간의 Firestore 필드 불일치 (link vs url) 해결
+* **오류내용**: `src/app/admin/page.tsx` (관리자 페이지)에서는 앱의 링크 경로를 `url` 필드로 읽고 쓰고 있으나, `src/app/apps/page.tsx` (앱니버스 페이지)에서는 `link` 필드로 읽고 쓰고 있어 데이터 불일치가 발생하고 링크 수정이 정상적으로 반영되지 않음.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/admin/page.tsx 파일에서 AppData 인터페이스의 url 속성을 link로 변경하고, Edit App Modal 및 handleSaveEdit 함수 내의 모든 url 관련 코드를 link로 변경해서 src/app/apps/page.tsx 파일의 Firestore 필드 스키마(link)와 통일해 줘."
+  ```
+
+## 9. 앱니버스 내부 링크 Client-side Routing 적용 및 로딩 딜레이 개선
+* **오류내용**: `src/app/apps/page.tsx`에서 앱을 실행할 때 항상 `target="_blank"` 속성을 가진 일반 `<a>` 태그를 사용함. 이로 인해 동일 사이트 내부 앱(예: `/gugudan`, `/dictation` 등)을 실행할 때도 새 탭이 열리며 페이지 전체가 새로 로드(Full reload)되어 동작이 버벅이고 느리게 느껴짐.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/apps/page.tsx 파일에서 실행하기 버튼(a 태그) 부분을 수정해서, 만약 app.link가 '/'로 시작하는 내부 경로이면 Next.js의 Link 컴포넌트를 사용하여 현재 창에서 바로 이동하도록 하고, 외부 링크(http로 시작하는 등)인 경우에만 기존처럼 target='_blank'를 가진 a 태그로 렌더링하도록 조건부 분기 코드를 구현해 줘. Next.js Link 컴포넌트 임포트도 확인해 줘."
+  ```
+
 ---
 
-## 8. 검증 (Verification)
-모든 린트 에러가 정상적으로 처리되었는지 마지막으로 확인합니다.
+## 10. 검증 (Verification)
+모든 변경 사항이 완료된 후, 린트 오류 및 빌드를 확인하여 최종 검증합니다.
 * **실행 명령어**:
   ```bash
   npm run lint
   npm run build
   npm run test
   ```
+
 

@@ -290,14 +290,23 @@ export default function AppsPage() {
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs text-gray-400">by {app.createdByName}</span>
                                         {app.link && (
-                                            <a
-                                                href={app.link}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className={`text-xs font-medium ${colors.text} hover:underline`}
-                                            >
-                                                실행하기 →
-                                            </a>
+                                            app.link.startsWith("/") ? (
+                                                <Link
+                                                    href={app.link}
+                                                    className={`text-xs font-medium ${colors.text} hover:underline`}
+                                                >
+                                                    실행하기 →
+                                                </Link>
+                                            ) : (
+                                                <a
+                                                    href={app.link}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`text-xs font-medium ${colors.text} hover:underline`}
+                                                >
+                                                    실행하기 →
+                                                </a>
+                                            )
                                         )}
                                     </div>
                                 </div>
