@@ -88,10 +88,17 @@ export default function AdminPage() {
         // Guestbook Listener
         const qMessages = query(collection(db, "guestbook"), orderBy("createdAt", "desc"));
         const unsubMessages = onSnapshot(qMessages, (snapshot) => {
-            const msgs = snapshot.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            } as GuestBookMessage));
+            const msgs = snapshot.docs.map(d => {
+                const data = d.data();
+                return {
+                    id: d.id,
+                    ...data,
+                    // 구버전 필드명 호환 정규화: message/content, authorId/userId, authorName/userName
+                    message: data.message || data.content || "",
+                    authorId: data.authorId || data.userId || "",
+                    authorName: data.authorName || data.userName || "익명",
+                } as GuestBookMessage;
+            });
             setMessages(msgs);
         });
 

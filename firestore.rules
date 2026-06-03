@@ -17,10 +17,18 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == ownerId;
     }
 
+    // 작성자 식별자: 신규 문서는 authorId, 구버전 문서는 userId 를 사용.
+    // 둘 다 없으면 ''(빈 문자열) → 존재하지 않는 필드 접근 런타임 에러 방지.
+    function docOwnerId(data) {
+      return data.get('authorId', data.get('userId', ''));
+    }
+
     // 차단된 사용자인지 검사 (users/{uid}.isBanned == true)
+    // exists() 통과 후 isBanned 필드 존재 여부까지 확인해 누락 시 런타임 에러 차단.
     function isBanned() {
       return isSignedIn()
              && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && ('isBanned' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data)
              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBanned == true;
     }
 
@@ -79,27 +87,30 @@ service cloud.firestore {
       // 생성: 로그인 + 본인 명의 + 미차단
       allow create: if creatingAsSelf();
 
-      // 수정: 차단자 차단 + (본인 글 / 관리자 / 타인이 반응·답글수만 변경)
+      // 수정: 차단자 차단 + (본인 글[authorId/userId] / 관리자 / 타인이 반응·답글수만 변경)
       allow update: if !isBanned()
-                    && (isOwner(resource.data.authorId)
+                    && (isOwner(docOwnerId(resource.data))
                         || isAdmin()
                         || onlyReactionMetaChanged());
 
-      // 삭제: 차단자 차단 + 본인 글 또는 관리자 (백오피스 휴지통)
+      // 삭제: 차단자 차단 + 본인 글[authorId/userId] 또는 관리자 (백오피스 휴지통)
       allow delete: if !isBanned()
-                    && (isOwner(resource.data.authorId) || isAdmin());
+                    && (isOwner(docOwnerId(resource.data)) || isAdmin());
 
       // ── comments(답글) 서브컬렉션 ────────────────
       match /comments/{commentId} {
         allow read: if true;
         allow create: if creatingAsSelf();
-        allow update: if !isBanned() && (isOwner(resource.data.authorId) || isAdmin());
+        // 수정: 차단자 차단 + (댓글 작성자[authorId/userId] / 관리자)
+        allow update: if !isBanned()
+                      && (isOwner(docOwnerId(resource.data)) || isAdmin());
         // 삭제: 차단자 차단 + (댓글 작성자 / 관리자 / 방명록 글 소유자)
-        // 방명록 글 소유자가 글을 지울 때 하위 댓글도 함께 삭제되도록 허용
+        // 방명록 글 소유자가 글을 지울 때 하위 댓글도 함께 삭제되도록 허용.
+        // 부모 글 소유자 검사는 authorId/userId 를 안전 접근(.get)해 런타임 에러 방지.
         allow delete: if !isBanned()
-                      && (isOwner(resource.data.authorId)
+                      && (isOwner(docOwnerId(resource.data))
                           || isAdmin()
-                          || request.auth.uid == get(/databases/$(database)/documents/guestbook/$(messageId)).data.authorId);
+                          || isOwner(docOwnerId(get(/databases/$(database)/documents/guestbook/$(messageId)).data)));
       }
     }
 

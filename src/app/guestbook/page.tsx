@@ -140,6 +140,10 @@ export default function GuestbookPage() {
                 return {
                     id: d.id,
                     ...data,
+                    // 구버전 필드명 호환 정규화: message/content, authorId/userId, authorName/userName
+                    message: data.message || data.content || "",
+                    authorId: data.authorId || data.userId || "",
+                    authorName: data.authorName || data.userName || "익명",
                     reactions: normalizeReactions(data.reactions),
                 } as GuestbookEntry;
             });
