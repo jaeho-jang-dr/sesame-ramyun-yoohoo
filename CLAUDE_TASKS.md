@@ -196,7 +196,22 @@
 
 ---
 
-## 31. 검증 (Verification)
+## 32. 방명록 삭제 오류 정밀 해결 및 구버전 스키마 호환성 대응
+* **오류내용**:
+  1. **isBanned()의 필드 누락 에러**: 기존 사용자(예: Jaeho Jang 등)는 Firestore `/users/{uid}` 문서에 `isBanned` 필드가 존재하지 않습니다. Firestore Security Rules는 존재하지 않는 맵의 키를 직접 접근할 때(`get(...).data.isBanned`) 런타임 에러를 발생시켜, `!isBanned()`를 통과해야 하는 모든 쓰기/삭제 요청이 `PERMISSION_DENIED`로 무조건 차단됩니다.
+  2. **구버전 방명록 데이터의 소유자 매핑 에러**: 구버전 방명록 문서는 `authorId`가 아니라 `userId` 필드에 작성자 UID를 저장하고 있으며, 내용도 `message`가 아니라 `content`에 저장되어 있습니다. 이로 인해 rules에서 `isOwner(resource.data.authorId)` 검사가 실패하고, UI상에서도 빈 카드로 나타나는 문제가 발생합니다.
+* **해결방법**:
+  1. `firestore.rules` 파일 내 `isBanned()` 함수에서 `'isBanned' in get(...).data` 검사 조건을 먼저 추가하여 단락평가(short-circuit)로 필드 누락 런타임 에러를 방지합니다.
+  2. `firestore.rules` 내의 `guestbook` 컬렉션 및 `comments` 서브컬렉션의 `update`/`delete` 규칙에 `resource.data.authorId` 뿐만 아니라 구버전 필드인 `resource.data.userId` (또는 `.get('userId', '')` 등 안전한 읽기)도 동일하게 검사하도록 수정합니다.
+  3. `src/app/guestbook/page.tsx`와 `src/app/admin/page.tsx` 파일 내에서 Firestore 데이터를 불러오는 부분을 수정하여, 구버전 필드(`content`, `userId`, `userName`)가 존재할 경우 새 스키마 필드(`message`, `authorId`, `authorName`)로 올바르게 복사/정규화(Normalize)하도록 코드를 보강합니다.
+* **Claude 명령어**:
+  ```bash
+  claude "firestore.rules와 src/app/guestbook/page.tsx, src/app/admin/page.tsx를 수정해 줘. 1) firestore.rules의 isBanned() 함수에서 exists() 검사 바로 뒤에 && ('isBanned' in get(/databases/\$(database)/documents/users/\$(request.auth.uid)).data) 를 추가하여 isBanned 필드가 없을 때의 런타임 에러를 차단하고, guestbook 및 comments 컬렉션의 update/delete 허용 조건에 구버전 필드인 userId 검사 및 get().data.get('userId', '') 형태의 안전한 parent 검사를 추가해 줘. 2) 두 tsx 파일에서 방명록 리스트 조회 시, 각 문서의 data.message || data.content, data.authorId || data.userId, data.authorName || data.userName 값을 매핑하도록 코드를 정규화(Normalize)해 줘."
+  ```
+
+---
+
+## 33. 검증 (Verification)
 모든 변경 사항이 완료된 후, 린트 오류 및 빌드를 확인하여 최종 검증합니다.
 * **실행 명령어**:
   ```bash
