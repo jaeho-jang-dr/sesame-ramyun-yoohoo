@@ -26,8 +26,8 @@ export function QuickLinks() {
                         <LayoutGrid className="w-5 h-5 text-purple-700" />
                     </div>
                     <div className="text-left">
-                        <h3 className="font-black text-gray-900 text-sm">앱 스튜디오</h3>
-                        <p className="text-xs text-gray-700 font-bold">
+                        <h3 className="font-black text-gray-900 text-lg">앱 스튜디오</h3>
+                        <p className="text-sm text-gray-700 font-bold">
                             내가 만든 앱 ({appCount !== null ? `${appCount}개` : '...'})
                         </p>
                     </div>
@@ -41,8 +41,8 @@ export function QuickLinks() {
                         <Users className="w-5 h-5 text-green-700" />
                     </div>
                     <div className="text-left">
-                        <h3 className="font-black text-gray-900 text-sm">커뮤니티</h3>
-                        <p className="text-xs text-gray-700 font-bold">친구들 방명록</p>
+                        <h3 className="font-black text-gray-900 text-lg">커뮤니티</h3>
+                        <p className="text-sm text-gray-700 font-bold">친구들 방명록</p>
                     </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform" />

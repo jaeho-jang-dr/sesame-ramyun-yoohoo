@@ -219,3 +219,20 @@
   npm run build
   npm run test
   ```
+
+---
+
+## 34. 마스코트 크기 확대 및 전체 폰트 가독성 개선
+* **작업내용**: 
+  1. `src/app/page.tsx`에 있는 마스코트 이미지의 크기를 더 직관적으로 잘 보이게 `w-20 h-20`에서 `w-28 h-28`(또는 `w-32 h-32` 등의 적절히 큰 크기)로 키우고, `Image` 컴포넌트의 width, height 속성도 112px(또는 128px) 이상으로 확장합니다.
+  2. 초등학교 저학년 학생(혜완이)이 글자를 읽기 쉽도록 홈 화면 및 대시보드 컴포넌트(`src/app/page.tsx`, `src/components/home/DashboardSummary.tsx`, `src/components/home/QuickLinks.tsx`, `src/components/home/MainMenu.tsx`) 전체의 폰트 사이즈를 키웁니다.
+     - 말풍선 텍스트: `text-base md:text-lg` -> `text-xl md:text-2xl`
+     - 대시보드 요약 타이틀: `text-lg` -> `text-xl`
+     - 대시보드 요약 각 항목 값(12권, 3개 등): `text-lg` -> `text-2xl`
+     - 대시보드 요약 각 항목 레이블(읽은 책 등): `text-xs` -> `text-sm`
+     - 바로가기/커뮤니티 링크 타이틀 및 설명 폰트 크기 증대
+* **Claude 명령어**:
+  ```bash
+  claude "마스코트 이미지 크기를 w-28 h-28 (Image 112x112) 또는 w-32 h-32 (Image 128x128) 수준으로 키우고, 말풍선의 글씨 크기를 text-xl md:text-2xl 수준으로 대폭 키워줘. 그리고 src/components/home/DashboardSummary.tsx, src/components/home/QuickLinks.tsx, src/components/home/MainMenu.tsx 파일에서 타이틀, 본문, 라벨 등 모든 작은 글씨들의 Tailwind CSS font size 클래스를 한 단계씩 올려서(text-xs->text-sm, text-sm->text-base/lg, text-lg->text-xl/2xl) 초등학생이 멀리서도 한눈에 알아볼 수 있게 가독성을 대폭 개선해 줘."
+  ```
+

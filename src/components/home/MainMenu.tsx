@@ -15,7 +15,7 @@ export function MainMenu() {
 
     return (
         <div>
-            <h3 className="text-lg font-bold text-gray-800 mb-4 px-1">바로가기</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 px-1">바로가기</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {menuItems.map((item, index) => (
                     <Link href={item.href} key={index} className="group relative">
@@ -30,8 +30,8 @@ export function MainMenu() {
               `}>
                                 <item.icon className="w-6 h-6" />
                             </div>
-                            <h3 className="font-black text-gray-900 mb-1">{item.label}</h3>
-                            <p className="text-xs text-gray-500 group-hover:text-gray-700 transition-colors line-clamp-1 font-bold">
+                            <h3 className="text-lg font-black text-gray-900 mb-1">{item.label}</h3>
+                            <p className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors line-clamp-1 font-bold">
                                 {item.desc}
                             </p>
                         </div>
