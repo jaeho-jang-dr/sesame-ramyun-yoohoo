@@ -254,4 +254,15 @@
   claude "src/app/guestbook/page.tsx 파일을 수정해 줘. 1) CommentItem 인터페이스에 reactions 속성 추가 및 fetchComments에서 normalizeReactions를 거쳐 reactions를 세팅하도록 수정. 2) 댓글 이모티콘을 누르면 실행되는 handleCommentReaction(entryId, commentId, emoji) 함수를 Firestore 연동과 낙관적 업데이트(commentsMap 업데이트)를 적용해 구현. 3) 댓글 렌더링 부분(comments.map)에 본문과 동일한 이모티콘 반응 버튼 레이아웃 및 툴팁을 추가. 4) 게시글과 댓글 이모티콘 영역 가장 끝에 사람 아이콘(👥) 버튼을 추가하고, 클릭 시 이 글/댓글에 반응한 전체 사람 실명 목록을 이모지별로 정렬하여 한번에 시각적으로 보여주는 모달 창(둥근 파스텔 테마) UI를 추가해 줘."
   ```
 
+---
+
+## 36. 홈 화면 관리자 버튼 유니콘으로 교체
+* **작업내용**:
+  - `src/app/page.tsx`의 Header 영역에 위치한 관리자 링크 버튼(`ADMIN` 텍스트가 명시된 부분)을 혜완이가 보기에 더 예쁜 유니콘 이모지(`🦄` 또는 `🦄 ADMIN`) 등으로 변경해 가독성과 직관성을 개선합니다.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/page.tsx 파일에서 관리자용 Link 컴포넌트(href='/admin') 내부의 텍스트(ADMIN)를 '🦄 ADMIN'으로 교체하거나 유니콘 이모지로 예쁘게 디자인을 변경해 줘."
+  ```
+
+
 

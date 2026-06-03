@@ -76,7 +76,8 @@ export default function Home() {
                   {user.displayName}님
                 </span>
                 {isAdmin && (
-                  <Link href="/admin" className="p-1.5 bg-purple-100 rounded-lg hover:bg-purple-200 transition-colors">
+                  <Link href="/admin" className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg hover:from-purple-200 hover:to-pink-200 transition-colors shadow-sm">
+                    <span className="text-sm leading-none">🦄</span>
                     <span className="text-xs font-bold text-purple-700">ADMIN</span>
                   </Link>
                 )}
