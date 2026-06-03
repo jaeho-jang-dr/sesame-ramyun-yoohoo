@@ -76,9 +76,8 @@ export default function Home() {
                   {user.displayName}님
                 </span>
                 {isAdmin && (
-                  <Link href="/admin" className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg hover:from-purple-200 hover:to-pink-200 transition-colors shadow-sm">
-                    <span className="text-sm leading-none">🦄</span>
-                    <span className="text-xs font-bold text-purple-700">ADMIN</span>
+                  <Link href="/admin" title="관리자 페이지" className="flex items-center px-2.5 py-1.5 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg hover:from-purple-200 hover:to-pink-200 transition-colors shadow-sm">
+                    <span className="text-xl leading-none">🦄</span>
                   </Link>
                 )}
                 <button onClick={logout} className="text-xs font-medium text-gray-500 hover:text-red-600 transition-colors">
