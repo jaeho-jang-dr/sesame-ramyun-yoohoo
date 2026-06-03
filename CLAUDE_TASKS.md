@@ -236,3 +236,22 @@
   claude "마스코트 이미지 크기를 w-28 h-28 (Image 112x112) 또는 w-32 h-32 (Image 128x128) 수준으로 키우고, 말풍선의 글씨 크기를 text-xl md:text-2xl 수준으로 대폭 키워줘. 그리고 src/components/home/DashboardSummary.tsx, src/components/home/QuickLinks.tsx, src/components/home/MainMenu.tsx 파일에서 타이틀, 본문, 라벨 등 모든 작은 글씨들의 Tailwind CSS font size 클래스를 한 단계씩 올려서(text-xs->text-sm, text-sm->text-base/lg, text-lg->text-xl/2xl) 초등학생이 멀리서도 한눈에 알아볼 수 있게 가독성을 대폭 개선해 줘."
   ```
 
+---
+
+## 35. 방문자 게시판 댓글 이모티콘 반응 및 종합 반응자 정보 조회 모달 구현
+* **작업내용**:
+  1. **댓글 이모티콘 반응 기능**:
+     - `CommentItem` 인터페이스에 `reactions?: { [emoji: string]: ReactionUser[] }` 속성을 추가합니다.
+     - `fetchComments` 함수에서 댓글의 `reactions` 데이터를 불러올 때 `normalizeReactions(data.reactions)`를 사용하여 정규화합니다.
+     - 댓글의 이모티콘 클릭 시 동작할 `handleCommentReaction(entryId: string, commentId: string, emoji: string)` 함수를 구현합니다. Firestore `/guestbook/{entryId}/comments/{commentId}` 경로의 `reactions` 필드를 업데이트하고, `commentsMap` 상태를 낙관적으로 업데이트 및 롤백할 수 있도록 구현합니다.
+     - 댓글 컴포넌트 렌더링 영역에 본문과 동일하게 `REACTION_EMOJIS`를 돌며 이모티콘 버튼들을 렌더링하고, 마우스오버 시 반응자 명단을 보여주는 툴팁도 동일하게 지원합니다.
+  2. **반응자 종합 정보 조회 모달**:
+     - 글과 댓글의 이모티콘 목록 맨 마지막 부분에 사람 아이콘(이모지 `👥` 또는 Lucide `Users`) 버튼을 추가합니다. (해당 글/댓글에 달린 반응이 총 1개 이상 있을 때만 보이도록 하거나 상시 노출하되 누르면 알려주도록 구성)
+     - 이 아이콘을 클릭하면 `activeReactionModal` 상태에 해당 글/댓글의 제목(또는 작성자 정보)과 `reactions` 맵을 저장하고 모달을 엽니다.
+     - 화면 중앙에 혜완이도 보기 편하고 예쁜 모달(둥근 모서리, 파스텔 배경, Jua 폰트, backdrop blur 효과)을 띄우고, 각 이모티콘별로 반응한 친구들의 실명 리스트(예: "❤️: Jaeho Jang, 김혜완", "👍: 홍길동")를 종합하여 한꺼번에 큰 글씨로 보여줍니다.
+* **Claude 명령어**:
+  ```bash
+  claude "src/app/guestbook/page.tsx 파일을 수정해 줘. 1) CommentItem 인터페이스에 reactions 속성 추가 및 fetchComments에서 normalizeReactions를 거쳐 reactions를 세팅하도록 수정. 2) 댓글 이모티콘을 누르면 실행되는 handleCommentReaction(entryId, commentId, emoji) 함수를 Firestore 연동과 낙관적 업데이트(commentsMap 업데이트)를 적용해 구현. 3) 댓글 렌더링 부분(comments.map)에 본문과 동일한 이모티콘 반응 버튼 레이아웃 및 툴팁을 추가. 4) 게시글과 댓글 이모티콘 영역 가장 끝에 사람 아이콘(👥) 버튼을 추가하고, 클릭 시 이 글/댓글에 반응한 전체 사람 실명 목록을 이모지별로 정렬하여 한번에 시각적으로 보여주는 모달 창(둥근 파스텔 테마) UI를 추가해 줘."
+  ```
+
+

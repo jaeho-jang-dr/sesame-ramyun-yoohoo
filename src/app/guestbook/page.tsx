@@ -32,6 +32,7 @@ import {
     LayoutGrid,
     List as ListIcon,
     CornerDownRight,
+    X,
 } from "lucide-react";
 
 interface ReactionUser {
@@ -57,6 +58,7 @@ interface CommentItem {
     authorId: string;
     authorName: string;
     authorEmoji?: string;
+    reactions: { [emoji: string]: ReactionUser[] };
     createdAt: Timestamp | null;
 }
 
@@ -126,6 +128,12 @@ export default function GuestbookPage() {
     const [commentsMap, setCommentsMap] = useState<{ [messageId: string]: CommentItem[] }>({});
     const [commentInput, setCommentInput] = useState<{ [messageId: string]: string }>({});
     const [commentSubmitting, setCommentSubmitting] = useState(false);
+
+    // 반응한 사람 전체 보기 모달
+    const [reactionModal, setReactionModal] = useState<{
+        title: string;
+        reactions: { [emoji: string]: ReactionUser[] };
+    } | null>(null);
 
     useEffect(() => {
         fetchEntries();
@@ -266,7 +274,14 @@ export default function GuestbookPage() {
                 orderBy("createdAt", "asc")
             );
             const snap = await getDocs(q);
-            const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as CommentItem[];
+            const list = snap.docs.map((d) => {
+                const data = d.data();
+                return {
+                    id: d.id,
+                    ...data,
+                    reactions: normalizeReactions(data.reactions),
+                };
+            }) as CommentItem[];
             setCommentsMap((prev) => ({ ...prev, [messageId]: list }));
         } catch (error) {
             console.error("Error fetching comments:", error);
@@ -292,6 +307,7 @@ export default function GuestbookPage() {
                 authorId: user.uid,
                 authorName: user.displayName || "익명",
                 authorEmoji: selectedEmoji,
+                reactions: {},
                 createdAt: serverTimestamp(),
             });
             await updateDoc(doc(db, "guestbook", messageId), {
@@ -310,6 +326,61 @@ export default function GuestbookPage() {
             alert("답글 작성에 실패했습니다.");
         } finally {
             setCommentSubmitting(false);
+        }
+    };
+
+    const handleCommentReaction = async (
+        entryId: string,
+        commentId: string,
+        emoji: string
+    ) => {
+        if (!user) {
+            alert("로그인이 필요합니다.");
+            return;
+        }
+
+        const comments = commentsMap[entryId] || [];
+        const comment = comments.find((c) => c.id === commentId);
+        if (!comment) return;
+
+        const currentReactions = comment.reactions || {};
+        const emojiReactions = currentReactions[emoji] || [];
+        const hasReacted = emojiReactions.some((u) => u.uid === user.uid);
+
+        const newReactions: { [emoji: string]: ReactionUser[] } = { ...currentReactions };
+
+        if (hasReacted) {
+            newReactions[emoji] = emojiReactions.filter((u) => u.uid !== user.uid);
+        } else {
+            newReactions[emoji] = [
+                ...emojiReactions,
+                { uid: user.uid, name: user.displayName || "익명" },
+            ];
+        }
+
+        // 빈 배열 정리
+        Object.keys(newReactions).forEach((key) => {
+            if (newReactions[key].length === 0) {
+                delete newReactions[key];
+            }
+        });
+
+        // 낙관적 업데이트 (commentsMap)
+        const prevComments = commentsMap[entryId];
+        setCommentsMap((prev) => ({
+            ...prev,
+            [entryId]: (prev[entryId] || []).map((c) =>
+                c.id === commentId ? { ...c, reactions: newReactions } : c
+            ),
+        }));
+
+        try {
+            await updateDoc(doc(db, "guestbook", entryId, "comments", commentId), {
+                reactions: newReactions,
+            });
+        } catch (error) {
+            console.error("Error updating comment reaction:", error);
+            setCommentsMap((prev) => ({ ...prev, [entryId]: prevComments })); // 롤백
         }
     };
 
@@ -349,6 +420,79 @@ export default function GuestbookPage() {
     const startEditing = (entry: GuestbookEntry) => {
         setEditingId(entry.id);
         setEditMessage(entry.message);
+    };
+
+    // ── 이모티콘 반응 버튼 바 (게시글/댓글 공용) ──────
+    const renderReactionBar = (
+        reactionsData: { [emoji: string]: ReactionUser[] },
+        onReact: (emoji: string) => void,
+        ownerLabel: string
+    ) => {
+        const totalReactors = Object.values(reactionsData || {}).reduce(
+            (sum, arr) => sum + arr.length,
+            0
+        );
+
+        return (
+            <>
+                {REACTION_EMOJIS.map(({ emoji }) => {
+                    const reactions = reactionsData?.[emoji] || [];
+                    const hasReacted = user && reactions.some((u) => u.uid === user.uid);
+                    const reactCount = reactions.length;
+
+                    return (
+                        <div key={emoji} className="relative group/reaction">
+                            <button
+                                onClick={() => onReact(emoji)}
+                                className={`
+                                    flex items-center gap-1 px-2.5 py-1 rounded-full
+                                    text-sm transition-all
+                                    ${hasReacted
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    }
+                                    ${reactCount > 0 ? "" : "opacity-50 hover:opacity-100"}
+                                `}
+                            >
+                                <span>{emoji}</span>
+                                {reactCount > 0 && (
+                                    <span className="font-medium">{reactCount}</span>
+                                )}
+                            </button>
+
+                            {/* 마우스오버 시 반응한 사용자 실명 목록 툴팁 */}
+                            {reactCount > 0 && (
+                                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/reaction:block z-20 w-max max-w-[200px]">
+                                    <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-normal break-keep">
+                                        {reactions.map((u) => u.name).join(", ")}
+                                        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+
+                {/* 반응한 사람 전체 보기 (👥) — 이모티콘 영역 끝 */}
+                <button
+                    onClick={() =>
+                        setReactionModal({ title: ownerLabel, reactions: reactionsData || {} })
+                    }
+                    disabled={totalReactors === 0}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-sm transition-all ${
+                        totalReactors > 0
+                            ? "bg-purple-100 text-purple-600 hover:bg-purple-200"
+                            : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                    }`}
+                    title="반응한 사람 모두 보기"
+                >
+                    <span>👥</span>
+                    {totalReactors > 0 && (
+                        <span className="font-medium">{totalReactors}</span>
+                    )}
+                </button>
+            </>
+        );
     };
 
     // ── 단일 게시글 카드 렌더 ─────────────────────
@@ -431,44 +575,11 @@ export default function GuestbookPage() {
 
                         {/* Reactions */}
                         <div className="flex flex-wrap items-center gap-2 mt-3">
-                            {REACTION_EMOJIS.map(({ emoji }) => {
-                                const reactions = entry.reactions?.[emoji] || [];
-                                const hasReacted =
-                                    user && reactions.some((u) => u.uid === user.uid);
-                                const reactCount = reactions.length;
-
-                                return (
-                                    <div key={emoji} className="relative group/reaction">
-                                        <button
-                                            onClick={() => handleReaction(entry.id, emoji)}
-                                            className={`
-                                                flex items-center gap-1 px-2.5 py-1 rounded-full
-                                                text-sm transition-all
-                                                ${hasReacted
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                                }
-                                                ${reactCount > 0 ? "" : "opacity-50 hover:opacity-100"}
-                                            `}
-                                        >
-                                            <span>{emoji}</span>
-                                            {reactCount > 0 && (
-                                                <span className="font-medium">{reactCount}</span>
-                                            )}
-                                        </button>
-
-                                        {/* 마우스오버 시 반응한 사용자 실명 목록 툴팁 */}
-                                        {reactCount > 0 && (
-                                            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/reaction:block z-20 w-max max-w-[200px]">
-                                                <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-normal break-keep">
-                                                    {reactions.map((u) => u.name).join(", ")}
-                                                    <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                            {renderReactionBar(
+                                entry.reactions || {},
+                                (emoji) => handleReaction(entry.id, emoji),
+                                `${entry.authorName}님의 글`
+                            )}
 
                             {/* 답글 토글 */}
                             <button
@@ -524,6 +635,20 @@ export default function GuestbookPage() {
                                                 <p className="text-sm text-gray-700 whitespace-pre-wrap break-words mt-0.5">
                                                     {comment.text}
                                                 </p>
+
+                                                {/* 댓글 Reactions */}
+                                                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                                    {renderReactionBar(
+                                                        comment.reactions || {},
+                                                        (emoji) =>
+                                                            handleCommentReaction(
+                                                                entry.id,
+                                                                comment.id,
+                                                                emoji
+                                                            ),
+                                                        `${comment.authorName}님의 답글`
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     ))
@@ -733,6 +858,90 @@ export default function GuestbookPage() {
                     </div>
                 )}
             </main>
+
+            {/* 반응한 사람 전체 목록 모달 (둥근 파스텔 테마) */}
+            {reactionModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/30 backdrop-blur-sm"
+                    onClick={() => setReactionModal(null)}
+                >
+                    <div
+                        className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* 헤더 */}
+                        <div className="bg-gradient-to-r from-pink-200 via-purple-200 to-sky-200 px-6 py-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-2xl flex-shrink-0">👥</span>
+                                <div className="min-w-0">
+                                    <h3 className="font-bold text-gray-700 leading-tight">
+                                        반응한 사람들
+                                    </h3>
+                                    <p className="text-xs text-gray-500 truncate">
+                                        {reactionModal.title}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setReactionModal(null)}
+                                className="p-1.5 rounded-full hover:bg-white/50 transition-colors flex-shrink-0"
+                                title="닫기"
+                            >
+                                <X className="w-5 h-5 text-gray-600" />
+                            </button>
+                        </div>
+
+                        {/* 본문 — 이모지별 정렬 */}
+                        <div className="p-5 overflow-y-auto space-y-4">
+                            {(() => {
+                                const data = reactionModal.reactions || {};
+                                // REACTION_EMOJIS 순서 우선, 그 외 이모지는 뒤에 이어붙임
+                                const orderedEmojis = [
+                                    ...REACTION_EMOJIS.map((r) => r.emoji),
+                                    ...Object.keys(data).filter(
+                                        (e) => !REACTION_EMOJIS.some((r) => r.emoji === e)
+                                    ),
+                                ].filter((e) => (data[e]?.length ?? 0) > 0);
+
+                                if (orderedEmojis.length === 0) {
+                                    return (
+                                        <p className="text-sm text-gray-400 text-center py-8">
+                                            아직 반응이 없어요 🌱
+                                        </p>
+                                    );
+                                }
+
+                                return orderedEmojis.map((emoji) => {
+                                    const users = data[emoji] || [];
+                                    return (
+                                        <div
+                                            key={emoji}
+                                            className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-4 border border-purple-100"
+                                        >
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <span className="text-xl">{emoji}</span>
+                                                <span className="text-sm font-bold text-purple-600">
+                                                    {users.length}명
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {users.map((u) => (
+                                                    <span
+                                                        key={u.uid}
+                                                        className="px-3 py-1 bg-white rounded-full text-sm text-gray-700 shadow-sm border border-purple-100"
+                                                    >
+                                                        {u.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
